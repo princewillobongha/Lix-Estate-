@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EstateLux — Premium U.S. Real Estate</title>
+  <meta name="description" content="EstateLux is a premium U.S. real-estate platform for discovering homes, apartments, and properties for sale and rent.">
+  <meta name="robots" content="index,follow">
+  <meta property="og:title" content="EstateLux — Premium U.S. Real Estate">
+  <meta property="og:description" content="Discover exceptional U.S. properties for sale and rent with EstateLux.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="assets/estatelux-logo.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header" id="top">
+    <a class="brand" href="#home" aria-label="EstateLux home">
+      <span class="brand-mark">EL</span>
+      <span class="brand-name">EstateLux</span>
+    </a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="#buy">Buy</a>
+      <a href="#rent">Rent</a>
+      <a href="#featured">Featured</a>
+      <a href="#how">How It Works</a>
+      <a href="#about">About</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-btn" data-open="saved" aria-label="Saved properties">♡</button>
+      <button class="ghost-btn" data-open="login">Sign in</button>
+      <button class="gold-btn small" data-open="contact">Contact</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <span class="eyebrow">PREMIUM U.S. REAL ESTATE</span>
+        <h1>Find a place<br><em>worth coming home to.</em></h1>
+        <p>Explore homes, apartments and exceptional properties across the United States — from one refined search.</p>
+
+        <div class="search-panel">
+          <div class="search-tabs">
+            <button class="active" data-mode="sale">Buy</button>
+            <button data-mode="rent">Rent</button>
+          </div>
+          <form id="searchForm" class="search-form">
+            <label class="field location-field">
+              <span>Location</span>
+              <input id="locationInput" placeholder="City, state or ZIP code" autocomplete="off">
+            </label>
+            <label class="field">
+              <span>Property type</span>
+              <select id="typeInput">
+                <option value="">Any type</option>
+                <option>Single Family</option>
+                <option>Condo</option>
+                <option>Townhouse</option>
+                <option>Apartment</option>
+                <option>Multi-Family</option>
+                <option>Manufactured</option>
+              </select>
+            </label>
+            <label class="field compact">
+              <span>Bedrooms</span>
+              <select id="bedsInput">
+                <option value="">Any</option>
+                <option>1+</option><option>2+</option><option>3+</option><option>4+</option><option>5+</option>
+              </select>
+            </label>
+            <label class="field compact">
+              <span id="budgetLabel">Max price</span>
+              <select id="budgetInput">
+                <option value="">Any</option>
+                <option value="300000">$300k</option>
+                <option value="500000">$500k</option>
+                <option value="750000">$750k</option>
+                <option value="1000000">$1M</option>
+                <option value="2000000">$2M</option>
+              </select>
+            </label>
+            <button class="search-btn" type="submit">Search <span>→</span></button>
+          </form>
+          <div class="quick-search">
+            <span>Popular:</span>
+            <button data-quick="Miami, FL">Miami</button>
+            <button data-quick="Austin, TX">Austin</button>
+            <button data-quick="Atlanta, GA">Atlanta</button>
+            <button data-quick="New York, NY">New York</button>
+            <button data-quick="Los Angeles, CA">Los Angeles</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="trust-strip">
+      <div><strong>50</strong><span>States covered</span></div>
+      <div><strong>Daily</strong><span>Listing updates</span></div>
+      <div><strong>24/7</strong><span>Global access</span></div>
+      <div><strong>Secure</strong><span>Saved searches</span></div>
+    </section>
+
+    <section class="section" id="featured">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow dark">DISCOVER ESTATELUX</span>
+          <h2>Properties that stand out.</h2>
+        </div>
+        <button class="text-btn" id="viewAllBtn">View all properties →</button>
+      </div>
+      <div class="listing-grid" id="listingGrid"></div>
+      <div class="empty-state hidden" id="emptyState">
+        <div class="empty-icon">⌕</div>
+        <h3>No matching properties</h3>
+        <p>Try a broader location or remove a filter.</p>
+        <button class="gold-btn" id="clearFilters">Clear filters</button>
+      </div>
+    </section>
+
+    <section class="split-section" id="buy">
+      <div class="split-image buy-image"></div>
+      <div class="split-copy">
+        <span class="eyebrow dark">BUY WITH CONFIDENCE</span>
+        <h2>Your next address starts here.</h2>
+        <p>Search by city, state, ZIP code, price, bedrooms and property type. Save the homes you love and keep your search organized.</p>
+        <div class="feature-list">
+          <div><span>01</span><p><b>Smart search</b><br>Powerful filters for real U.S. listings.</p></div>
+          <div><span>02</span><p><b>Save favorites</b><br>Keep your shortlist in one place.</p></div>
+          <div><span>03</span><p><b>Request information</b><br>Ask about a property directly.</p></div>
+        </div>
+        <button class="gold-btn" data-scroll="#featured">Explore homes</button>
+      </div>
+    </section>
+
+    <section class="section light" id="rent">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow dark">RENTAL LIVING</span>
+          <h2>Find your next rental.</h2>
+          <p class="section-subtitle">Apartments, townhomes and houses across the U.S.</p>
+        </div>
+        <button class="outline-btn" id="rentBtn">Search rentals</button>
+      </div>
+      <div class="rental-cards">
+        <article class="mini-card">
+          <span class="mini-icon">⌂</span><h3>Apartment living</h3><p>Modern rentals in major U.S. cities.</p><button data-rental="Apartment">Explore →</button>
+        </article>
+        <article class="mini-card">
+          <span class="mini-icon">⌂</span><h3>Houses for rent</h3><p>More space, more privacy, more choice.</p><button data-rental="Single Family">Explore →</button>
+        </article>
+        <article class="mini-card">
+          <span class="mini-icon">⌂</span><h3>Townhomes</h3><p>A balanced option for modern living.</p><button data-rental="Townhouse">Explore →</button>
+        </article>
+      </div>
+    </section>
+
+    <section class="map-section">
+      <div class="map-copy">
+        <span class="eyebrow">SEARCH ACROSS AMERICA</span>
+        <h2>From coast to coast.</h2>
+        <p>EstateLux is designed for nationwide discovery. Search properties by city, state or ZIP and open a location directly in maps.</p>
+        <button class="gold-btn" data-scroll="#featured">Explore the market</button>
+      </div>
+      <div class="map-art" aria-label="Stylized U.S. map">
+        <div class="map-grid"></div>
+        <div class="map-pin p1">NY</div><div class="map-pin p2">FL</div><div class="map-pin p3">TX</div><div class="map-pin p4">CA</div>
+        <div class="map-label">UNITED STATES</div>
+      </div>
+    </section>
+
+    <section class="how-section" id="how">
+      <div class="section-heading centered">
+        <div><span class="eyebrow dark">A SIMPLER WAY TO SEARCH</span><h2>Real estate, refined.</h2></div>
+      </div>
+      <div class="steps">
+        <div class="step"><span>01</span><h3>Search</h3><p>Choose Buy or Rent, then search the places and features that matter to you.</p></div>
+        <div class="step"><span>02</span><h3>Save</h3><p>Favorite properties and create saved searches so you can return anytime.</p></div>
+        <div class="step"><span>03</span><h3>Connect</h3><p>Open a property, view its location, and request information directly.</p></div>
+      </div>
+    </section>
+
+    <section class="cta-section" id="about">
+      <div>
+        <span class="eyebrow">ESTATELUX</span>
+        <h2>Exceptional properties.<br>One elegant experience.</h2>
+      </div>
+      <button class="gold-btn" data-open="contact">Talk to EstateLux →</button>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-brand">
+      <img src="assets/estatelux-logo.jpg" alt="EstateLux logo">
+      <p>Premium U.S. real estate discovery.</p>
+    </div>
+    <div class="footer-links">
+      <div><b>Explore</b><a href="#buy">Buy</a><a href="#rent">Rent</a><a href="#featured">Featured</a></div>
+      <div><b>Account</b><button data-open="login">Sign in</button><button data-open="saved">Saved</button><button data-open="alerts">Alerts</button></div>
+      <div><b>Company</b><a href="#about">About</a><button data-open="contact">Contact</button><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div>
+    </div>
+    <div class="footer-bottom"><span>© 2026 EstateLux. All rights reserved.</span><span>Designed for the U.S. property market.</span></div>
+  </footer>
+
+  <nav class="mobile-nav" aria-label="Mobile navigation">
+    <a href="#home">⌂<span>Home</span></a>
+    <a href="#featured">⌕<span>Search</span></a>
+    <button data-open="saved">♡<span>Saved</span></button>
+    <button data-open="alerts">◷<span>Alerts</span></button>
+    <button data-open="login">◯<span>Account</span></button>
+  </nav>
+
+  <div class="modal-backdrop hidden" id="modalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true">
+      <button class="modal-close" id="modalClose">×</button>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
