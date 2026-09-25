@@ -134,6 +134,7 @@ function setMode(next){
     :'<option value="">Any</option><option value="300000">$300k</option><option value="500000">$500k</option><option value="750000">$750k</option><option value="1000000">$1M</option><option value="2000000">$2M</option>';
   listings=DEMO_LISTINGS.filter(x=>x.mode===mode);
   localFilter();
+  loadApi();
 }
 
 async function saveFavorite(id){
