@@ -122,7 +122,7 @@ async function saveFavorite(id){
 }
 
 function updateHeader(){
-  const signins=$$('[data-open="login"]');
+  const signins=$("#loginBtn, [data-auth-button]");
   signins.forEach(b=>{
     b.dataset.open=currentUser?"account":"login";
     if(!b.closest(".mobile-nav")) b.textContent=currentUser?"Account":"Sign in";
