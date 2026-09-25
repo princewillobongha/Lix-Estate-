@@ -164,9 +164,9 @@ function updateHeader(){
   buttons.forEach(b=>{
     b.dataset.open=currentUser?"account":"login";
     if(b.closest(".mobile-nav")){
-      b.innerHTML="👤<span>Account</span>";
+      b.innerHTML='<span class="profile-icon" aria-hidden="true">👤</span><span>Profile</span>';
     }else{
-      b.textContent=currentUser?"Account":"Sign in";
+      b.innerHTML='<span class="profile-icon" aria-hidden="true">👤</span>';
     }
   });
   if($("#notificationCount")&&currentUser)loadNotifications();
@@ -207,19 +207,20 @@ function openModal(type,data=null){
     html=`<div class="property-modal"><img src="${esc(p.image)}" alt="${esc(p.title)}"><div><span class="eyebrow dark">${esc(p.tag||"PROPERTY")}</span><h2>${esc(p.title)}</h2><div class="price">${money(p.price,p.mode==="rent")}</div><p>${esc(p.beds)} bedrooms · ${esc(p.baths)} bathrooms · ${Number(p.sqft||0).toLocaleString()} sq ft · ${esc(p.type)}</p><p><b>${esc(p.address||p.city+", "+p.state)}</b></p><p>${esc(p.description||"Detailed property information is available on the property page.")}</p><div class="modal-actions"><a class="gold-btn" href="property.html?id=${encodeURIComponent(p.id)}&mode=${p.mode}">Full property details</a><button class="outline-btn" data-open-contact="${esc(p.id)}">Request Information</button><button class="outline-btn" data-map="${esc(p.id)}">Open map</button></div></div></div>`;
   }else if(type==="contact"){
     const listingId=data?.id||"",listingTitle=data?.title||"";
-    html=`<span class="eyebrow dark">ESTATELUX CONTACT</span><h2>Request information</h2><p>Your request will be sent to EstateLux at <b>${CONTACT_EMAIL}</b>.</p><form class="modal-form" id="contactForm"><input required name="name" placeholder="Full name"><input required type="email" name="email" placeholder="Email address"><input name="phone" placeholder="Phone number (optional)"><input type="hidden" name="listing_id" value="${esc(listingId)}"><input type="hidden" name="listing_title" value="${esc(listingTitle)}"><textarea required name="message" placeholder="How can we help?">${listingTitle?"I am interested in "+esc(listingTitle)+".":""}</textarea><button class="gold-btn" type="submit">Send request</button></form><a class="mail-link" href="mailto:${CONTACT_EMAIL}?subject=EstateLux%20Property%20Inquiry">Email EstateLux directly: ${CONTACT_EMAIL}</a>`;
+    html=`<span class="eyebrow dark">ESTATELUX CONTACT</span><h2>Request information</h2><p>Send us your request and the EstateLux team will receive it securely.</p><form class="modal-form" id="contactForm"><input required name="name" placeholder="Full name"><input required type="email" name="email" placeholder="Email address"><input name="phone" placeholder="Phone number (optional)"><input type="hidden" name="listing_id" value="${esc(listingId)}"><input type="hidden" name="listing_title" value="${esc(listingTitle)}"><textarea required name="message" placeholder="How can we help?">${listingTitle?"I am interested in "+esc(listingTitle)+".":""}</textarea><button class="gold-btn" type="submit">Send request</button></form>`;
   }else if(type==="login"){
     html=`<span class="eyebrow dark">ESTATELUX ACCOUNT</span><h2>Welcome to EstateLux.</h2><p>Sign in to manage your profile, saved properties, alerts and notifications.</p><form class="modal-form" id="loginForm"><input required name="email" type="email" placeholder="Email address"><input required name="password" type="password" minlength="6" placeholder="Password"><input name="full_name" placeholder="Full name (for new accounts)"><input name="username" placeholder="Username (for new accounts)"><button class="gold-btn" type="submit">Sign in</button><button class="outline-btn" type="button" id="googleSignInBtn">Continue with Google</button><button class="outline-btn" type="button" id="signupBtn">Create account</button><p id="authMessage"></p></form>`;
   }else if(type==="account"){
     if(!currentUser){openModal("login");return}
     const name=currentProfile?.full_name||currentUser.user_metadata?.full_name||"EstateLux member";
+    const avatar=currentProfile?.avatar_url||currentUser.user_metadata?.avatar_url||"";
     const username=currentProfile?.username||"Add username";
     const initials=(name.match(/\b\w/g)||["E","L"]).slice(0,2).join("").toUpperCase();
-    html=`<div class="account-head"><div class="avatar">${esc(initials)}</div><div><span class="eyebrow dark">MY ESTATELUX</span><h2>${esc(name)}</h2><p>@${esc(username)}</p></div></div><div class="account-menu"><button data-open="profile">Edit profile</button><button data-open="saved">Saved properties</button><button data-open="alerts">Saved searches</button><button data-open="notifications">Notifications</button></div><button class="outline-btn" id="signOutBtn">Sign out</button>`;
+    html=`<div class="account-head"><div class="avatar">${avatar?`<img src="${esc(avatar)}" alt="Profile picture">`:esc(initials)}</div><div><span class="eyebrow dark">MY ESTATELUX</span><h2>${esc(name)}</h2><p>@${esc(username)}</p></div></div><div class="account-menu"><button data-open="profile">Edit profile</button><button data-open="saved">Saved properties</button><button data-open="alerts">Saved searches</button><button data-open="notifications">Notifications</button></div><button class="outline-btn" id="signOutBtn">Sign out</button>`;
   }else if(type==="profile"){
     if(!currentUser){openModal("login");return}
     const p=currentProfile||{};
-    html=`<span class="eyebrow dark">PROFILE</span><h2>Your EstateLux profile</h2><form class="modal-form" id="profileForm"><input name="full_name" value="${esc(p.full_name||currentUser.user_metadata?.full_name||"")}" placeholder="Full name"><input name="username" value="${esc(p.username||"")}" placeholder="Username"><input name="phone" value="${esc(p.phone||"")}" placeholder="Phone number"><input name="country" value="${esc(p.country||"")}" placeholder="Country"><button class="gold-btn">Save profile</button><p id="profileMessage"></p></form>`;
+    html=`<span class="eyebrow dark">PROFILE</span><h2>Your EstateLux profile</h2><form class="modal-form" id="profileForm"><div class="profile-upload"><div class="avatar large" id="profilePreview">${p.avatar_url?`<img src="${esc(p.avatar_url)}" alt="Profile picture">`:"👤"}</div><label class="outline-btn file-btn">Add profile picture<input type="file" id="profilePicture" name="profile_picture" accept="image/*" hidden></label></div><input name="full_name" value="${esc(p.full_name||currentUser.user_metadata?.full_name||"")}" placeholder="Full name"><input name="username" value="${esc(p.username||"")}" placeholder="Username"><input name="phone" value="${esc(p.phone||"")}" placeholder="Phone number"><input name="country" value="${esc(p.country||"")}" placeholder="Country"><button class="gold-btn">Save profile</button><p id="profileMessage"></p></form>`;
   }else if(type==="saved"){
     const saved=savedProperties.filter(p=>favorites.includes(p.id));
     html=`<span class="eyebrow dark">YOUR COLLECTION</span><h2>Saved properties</h2>${saved.length?'<div class="saved-list">'+saved.map(p=>`<div class="saved-row"><span>${esc(p.title)}<small> · ${esc(p.city)}, ${esc(p.state)}</small></span><button data-property="${esc(p.id)}">Open →</button></div>`).join("")+"</div>":'<p>No saved properties yet. Tap ♡ on a property to build your collection.</p>'}`;
@@ -234,6 +235,7 @@ function openModal(type,data=null){
   }
   content.innerHTML=html;
   if(type==="notifications")renderNotifications();
+  if(type==="profile"){$("#profilePicture")?.addEventListener("change",e=>{const f=e.target.files?.[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{$("#profilePreview").innerHTML=`<img src="${esc(reader.result)}" alt="Profile picture preview">`};reader.readAsDataURL(f)});}
 }
 
 async function renderNotifications(){
@@ -248,22 +250,15 @@ async function renderNotifications(){
 function openMapForProperty(p){
   if(!p)return;
   const destination=p.lat&&p.lng?p.lat+","+p.lng:(p.address||p.city+", "+p.state);
-  const blank=window.open("about:blank","_blank");
-  const go=url=>{
-    if(blank&&!blank.closed)blank.location.href=url;
-    else window.location.href=url;
-  };
-  if(!navigator.geolocation){
-    go("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(destination));
-    return;
-  }
+  const mapSearch="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(destination);
+  if(!navigator.geolocation){window.location.href=mapSearch;return}
   navigator.geolocation.getCurrentPosition(pos=>{
     const origin=pos.coords.latitude+","+pos.coords.longitude;
-    go("https://www.google.com/maps/dir/?api=1&origin="+encodeURIComponent(origin)+"&destination="+encodeURIComponent(destination));
+    const url="https://www.google.com/maps/dir/?api=1&origin="+encodeURIComponent(origin)+"&destination="+encodeURIComponent(destination);
+    window.location.href=url;
   },()=>{
-    if(blank&&!blank.closed)blank.close();
     openModal("location");
-  },{enableHighAccuracy:false,timeout:10000,maximumAge:300000});
+  },{enableHighAccuracy:false,timeout:15000,maximumAge:300000});
 }
 
 async function closeModal(){
@@ -362,10 +357,29 @@ document.addEventListener("submit",async e=>{
     if(!currentUser)return;
     const f=new FormData(e.target),msg=$("#profileMessage");msg.textContent="Saving…";
     try{
-      const {data,error}=await supabaseClient.from("profiles").upsert({id:currentUser.id,full_name:f.get("full_name")||null,username:f.get("username")||null,phone:f.get("phone")||null,country:f.get("country")||null}).select().single();
+      let avatar_url=currentProfile?.avatar_url||null;
+      const file=f.get("profile_picture");
+      if(file&&file.size){
+        avatar_url=await new Promise((resolve,reject)=>{
+          const reader=new FileReader();
+          reader.onload=()=>{
+            const img=new Image();
+            img.onload=()=>{
+              const size=256,canvas=document.createElement("canvas"),ctx=canvas.getContext("2d");
+              canvas.width=size;canvas.height=size;
+              const scale=Math.max(size/img.width,size/img.height),w=img.width*scale,h=img.height*scale;
+              ctx.drawImage(img,(size-w)/2,(size-h)/2,w,h);
+              resolve(canvas.toDataURL("image/jpeg",0.82));
+            };
+            img.onerror=reject;img.src=reader.result;
+          };
+          reader.onerror=reject;reader.readAsDataURL(file);
+        });
+      }
+      const {data,error}=await supabaseClient.from("profiles").upsert({id:currentUser.id,full_name:f.get("full_name")||null,username:f.get("username")||null,phone:f.get("phone")||null,country:f.get("country")||null,avatar_url}).select().single();
       if(error)throw error;
-      currentProfile=data;msg.textContent="Profile saved.";updateHeader();
-    }catch(err){msg.textContent=err.message}
+      currentProfile=data;msg.textContent="Profile saved.";updateHeader();setTimeout(()=>openModal("account"),350);
+    }catch(err){msg.textContent="Could not save your profile. Please try again."}
     return;
   }
 
@@ -383,7 +397,7 @@ document.addEventListener("submit",async e=>{
       form.innerHTML='<div class="success-box"><h3>Thank you.</h3><p>Your request has been sent to EstateLux. We will review it and respond using the contact information you provided.</p><button type="button" class="gold-btn" id="closeSuccess">Close</button></div>';
     }catch(err){
       if(submit){submit.disabled=false;submit.textContent="Send request"}
-      form.insertAdjacentHTML("beforeend",'<p class="form-error">'+esc(err.message||"We could not send your request.")+'</p>');
+      form.insertAdjacentHTML("beforeend",'<p class="form-error">We could not send your request right now. Please try again.</p>');
     }
     return;
   }
