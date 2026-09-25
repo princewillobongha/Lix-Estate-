@@ -11,7 +11,7 @@ export default async function handler(req,res){
     const searches=await sr.json();
     let sent=0;
     for(const s of searches||[]){
-      const params=new URLSearchParams({status:"Active",limit:"10"});
+      const params=new URLSearchParams({status:"Active",limit:"10",daysOld:"1"});
       const loc=String(s.location||"").trim();
       if(/^\d{5}$/.test(loc)) params.set("zipCode",loc);
       else if(loc.includes(",")){const parts=loc.split(",").map(x=>x.trim());params.set("city",parts[0]);if(parts[1])params.set("state",parts[1].split(/\s+/)[0].toUpperCase())}
@@ -23,7 +23,7 @@ export default async function handler(req,res){
       const rr=await fetch("https://api.rentcast.io/v1"+endpoint+"?"+params,{headers:{"X-Api-Key":process.env.RENTCAST_API_KEY||""}});
       if(!rr.ok) continue;
       const data=await rr.json();const items=Array.isArray(data)?data:(data.listings||[]);
-      if(!items.length) continue;
+      if(!items.length || !s.email) continue;
       const html="<h2>New EstateLux matches</h2><p>New properties matching your saved search <b>"+String(s.name||"EstateLux search").replace(/</g,"&lt;")+"</b>:</p><ul>"+items.slice(0,5).map(p=>"<li><b>"+String(p.title||p.formattedAddress||"Property").replace(/</g,"&lt;")+"</b> — $"+Number(p.price||0).toLocaleString()+" — "+String(p.formattedAddress||"").replace(/</g,"&lt;")+"</li>").join("")+"</ul><p>Open EstateLux to continue exploring.</p>";
       const er=await fetch("https://api.resend.com/emails",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+resend},body:JSON.stringify({from:process.env.ESTATELUX_FROM_EMAIL||"EstateLux <onboarding@resend.dev>",to:[s.email],subject:"New EstateLux property matches",html})});
       if(er.ok){
