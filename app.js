@@ -163,7 +163,7 @@ function openModal(type,data=null){
   }else if(type==="contact"){
     html=`<span class="eyebrow dark">ESTATELUX CONTACT</span><h2>Talk to EstateLux</h2><p>Your message is saved securely. Once email delivery is configured, the EstateLux team will also receive it by email.</p><form class="modal-form" id="contactForm"><input required name="name" placeholder="Full name"><input required type="email" name="email" placeholder="Email address"><input name="phone" placeholder="Phone number (optional)"><textarea required name="message" placeholder="How can we help?"></textarea><button class="gold-btn">Send message</button></form><a class="mail-link" href="mailto:${CONTACT_EMAIL}?subject=EstateLux%20Inquiry">Or email EstateLux directly: ${CONTACT_EMAIL}</a>`;
   }else if(type==="login"){
-    html=`<span class="eyebrow dark">ESTATELUX ACCOUNT</span><h2>Welcome to your property space.</h2><p>Create an account to keep your profile, favorites, saved searches and notifications together.</p><form class="modal-form" id="loginForm"><input required name="email" type="email" placeholder="Email address"><input required name="password" type="password" minlength="6" placeholder="Password"><input name="full_name" placeholder="Full name (for new accounts)"><input name="username" placeholder="Username (for new accounts)"><button class="gold-btn" type="submit">Sign in</button><button class="outline-btn" type="button" id="signupBtn">Create account</button><p id="authMessage"></p></form>`;
+    html=`<span class="eyebrow dark">ESTATELUX ACCOUNT</span><h2>Welcome to your property space.</h2><p>Create an account to keep your profile, favorites, saved searches and notifications together.</p><form class="modal-form" id="loginForm"><input required name="email" type="email" placeholder="Email address"><input required name="password" type="password" minlength="6" placeholder="Password"><input name="full_name" placeholder="Full name (for new accounts)"><input name="username" placeholder="Username (for new accounts)"><button class="gold-btn" type="submit">Sign in</button><button class="outline-btn" type="button" id="googleSignInBtn">Continue with Google</button><button class="outline-btn" type="button" id="signupBtn">Create account</button><p id="authMessage"></p></form>`;
   }else if(type==="account"){
     if(!currentUser){openModal("login");return}
     const name=currentProfile?.full_name||currentUser.user_metadata?.full_name||"EstateLux member";
@@ -245,6 +245,10 @@ document.addEventListener("click",async e=>{
   if(e.target.closest("#menuClose")){$("#sideMenu")?.classList.remove("open");return}
   if(e.target.closest("#modalClose")){closeModal();return}
   if(e.target.id==="signOutBtn"){await supabaseClient.auth.signOut();await refreshAuth();closeModal();return}
+  if(e.target.id==="googleSignInBtn"){
+    try{const {error}=await supabaseClient.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin}});if(error)throw error}catch(err){const msg=$("#authMessage");if(msg)msg.textContent=err.message+" — Google sign-in must first be enabled in Supabase Auth."}
+    return;
+  }
   if(e.target.id==="signupBtn"){
     const f=new FormData($("#loginForm")),msg=$("#authMessage");
     msg.textContent="Creating account…";
