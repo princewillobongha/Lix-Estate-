@@ -10,7 +10,7 @@ const DEMO_LISTINGS = [
 let mode = "sale";
 let listings = [...DEMO_LISTINGS];
 let filtered = [...listings];
-let favorites = JSON.parse(localStorage.getItem("estatelux_favorites") || "[]");
+let favorites = JSON.parse(localStorage.getItem("estatelux_favorites") || "[]");\nconst supabaseClient = window.supabase?.createClient(window.ESTATELUX_SUPABASE_URL, window.ESTATELUX_SUPABASE_KEY);\nlet currentUser = null;
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
