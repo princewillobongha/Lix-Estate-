@@ -307,10 +307,12 @@ document.addEventListener("submit",async e=>{
     e.preventDefault();
     if(!currentUser){openModal("login");return}
     const f=new FormData(e.target),msg=$("#alertMessage");
-    const text=f.get("search");
-    const parts=text.split(" in ");
+    const text=String(f.get("search")||"").trim();
+    const parts=text.split(/\\s+in\\s+/i);
+    const bedroomMatch=text.match(/(\\d+)\\s*\\+?\\s*bed/i);
+    const alertMode=text.toLowerCase().includes("rent")?"rent":"sale";
     try{
-      const {error}=await supabaseClient.from("saved_searches").insert({user_id:currentUser.id,name:text,mode:"sale",location:parts[1]||text,email_alerts:true,alert_frequency:f.get("frequency")});
+      const {error}=await supabaseClient.from("saved_searches").insert({user_id:currentUser.id,name:text||"EstateLux saved search",mode:alertMode,location:parts[1]||text,bedrooms:bedroomMatch?Number(bedroomMatch[1]):null,email:String(f.get("email")||currentUser.email||""),email_alerts:true,alert_frequency:f.get("frequency")});
       if(error)throw error;
       msg.textContent="Saved. New matching listings will appear in your alert system.";
     }catch(err){msg.textContent=err.message}
