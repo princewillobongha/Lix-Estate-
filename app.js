@@ -130,6 +130,7 @@ function updateHeader(){
   const n=$("#notificationCount");
   if(n&&currentUser) loadNotifications();
   else if(n) n.textContent="";
+  const mn=$("#mobileNotificationCount"); if(mn&&n) mn.textContent=n.textContent;
 }
 
 async function refreshAuth(){
@@ -180,6 +181,8 @@ function openModal(type,data=null){
     html=`<span class="eyebrow dark">PROPERTY ALERTS</span><h2>Stay ahead of new listings.</h2><p>Save the search you care about. Email delivery will activate after the EstateLux mail service is connected.</p><form class="modal-form" id="alertForm"><input required type="email" name="email" value="${esc(currentUser?.email||"")}" placeholder="Email address"><input required name="search" placeholder="e.g. 3+ bedrooms in Houston"><select name="frequency"><option value="daily">Daily digest</option><option value="instant">New listing alerts</option><option value="weekly">Weekly</option></select><button class="gold-btn">Save alert</button><p id="alertMessage"></p></form>`;
   }else if(type==="notifications"){
     html=`<span class="eyebrow dark">NOTIFICATIONS</span><h2>Your updates</h2><div id="notificationList"><p>Loading…</p></div>`;
+  }else if(type==="location"){
+    html=`<span class="eyebrow dark">LOCATION ACCESS</span><h2>Turn on your location</h2><p>EstateLux asks for your browser location only when you choose directions to a property. Turn on location permission, then tap the map button again.</p><button class="gold-btn" id="locationHelp">I understand</button>`;
   }else if(type==="menu"){
     html=`<span class="eyebrow dark">ESTATELUX</span><h2>Explore the platform</h2><div class="menu-grid"><a href="properties.html?mode=sale">Homes for sale</a><a href="properties.html?mode=rent">Rentals</a><a href="about.html">About EstateLux</a><a href="mailto:${CONTACT_EMAIL}">Contact by email</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div>`;
   }
@@ -207,7 +210,7 @@ function openMapForProperty(p){
   navigator.geolocation.getCurrentPosition(pos=>{
     const origin=pos.coords.latitude+","+pos.coords.longitude;
     const destination=p.lat&&p.lng?p.lat+","+p.lng:(p.address||p.city+", "+p.state);
-    window.open("https://www.google.com/maps/dir/?api=1&origin="+encodeURIComponent(origin)+"&destination="+encodeURIComponent(destination)," _blank");
+    window.open("https://www.google.com/maps/dir/?api=1&origin="+encodeURIComponent(origin)+"&destination="+encodeURIComponent(destination),"_blank");
   },()=>{
     openModal("location");
   },{enableHighAccuracy:false,timeout:8000,maximumAge:300000});
@@ -224,7 +227,7 @@ document.addEventListener("click",async e=>{
   if(map){const p=listings.find(x=>x.id===map.dataset.map);if(p)openMapForProperty(p);return}
 
   const open=e.target.closest("[data-open]");
-  if(open){openModal(open.dataset.open);return}
+  if(open){if(open.dataset.open==="notifications"&&!currentUser){openModal("login");return}openModal(open.dataset.open);return}
 
   const contact=e.target.closest("[data-open-contact]");
   if(contact){const p=listings.find(x=>x.id===contact.dataset.openContact);openModal("contact",p);return}
