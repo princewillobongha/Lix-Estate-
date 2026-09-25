@@ -6,10 +6,103 @@ const DEMO=[
 {id:"demo-5",mode:"rent",title:"Westside Townhome",city:"Los Angeles",state:"CA",price:4800,beds:3,baths:2.5,sqft:1780,type:"Townhouse",tag:"RENT",image:"https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=1200&q=85",description:"A comfortable Los Angeles townhome with modern space and privacy."},
 {id:"demo-6",mode:"sale",title:"Hill Country Retreat",city:"Dallas",state:"TX",price:1125000,beds:5,baths:4,sqft:3650,type:"Single Family",tag:"LUXURY",image:"https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=1200&q=85",description:"A spacious Texas retreat with room for entertaining and everyday life."}
 ];
-const params=new URLSearchParams(location.search);let mode=params.get("mode")==="rent"?"rent":"sale";let all=[];
+
+const params=new URLSearchParams(location.search);
+let mode=params.get("mode")==="rent"?"rent":"sale";
+let all=[];
+let favorites=JSON.parse(localStorage.getItem("estatelux_favorites")||"[]");
+
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
-function render(items){const g=document.querySelector("#propertyGrid"),e=document.querySelector("#propertyEmpty");if(!items.length){g.innerHTML="";e.classList.remove("hidden");return}e.classList.add("hidden");g.innerHTML=items.map(p=>`<article class="listing-card"><div class="listing-image" style="background-image:url('${esc(p.image)}')"><span class="badge">${esc(p.tag)}</span></div><div class="listing-info"><div class="price">$${Number(p.price||0).toLocaleString()}${mode==="rent"?"/mo":""}</div><div class="listing-title">${esc(p.title)}</div><div class="address">${esc(p.city)}, ${esc(p.state)}</div><div class="stats"><span>${esc(p.beds)} bd</span><span>${esc(p.baths)} ba</span><span>${Number(p.sqft||0).toLocaleString()} sq ft</span></div><div class="card-actions"><a class="primary" href="property.html?id=${encodeURIComponent(p.id)}&mode=${mode}">View Property</a><a href="#" class="property-map" data-address="${esc(p.address||p.city+", "+p.state)}">Map</a></div></div></article>`).join("")}
-async function load(){const type=params.get("type")||"";document.querySelector("#pageTitle").textContent=mode==="rent"?"Rental properties":"Homes for sale";document.querySelector("#pType").value=type;all=DEMO.filter(x=>x.mode===mode);try{const r=await fetch("/api/listings?mode="+mode+"&limit=24");const d=await r.json();if(Array.isArray(d.listings)&&d.listings.length)all=d.listings.map(p=>({...p,id:p.id||crypto.randomUUID(),mode,title:p.title||p.formattedAddress?.split(",")[0]||"EstateLux Property",city:p.city||"",state:p.state||"",price:p.price,beds:p.bedrooms??"—",baths:p.bathrooms??"—",sqft:p.squareFootage||0,type:p.propertyType||"Property",tag:p.listingType?.toUpperCase()||"PROPERTY",image:p.photo||p.photos?.[0]||DEMO[0].image,address:p.formattedAddress,description:p.description||""}))}catch(e){}filter()}
-function filter(){const q=document.querySelector("#pLocation").value.trim().toLowerCase(),t=document.querySelector("#pType").value,b=document.querySelector("#pBeds").value;render(all.filter(p=>(!q||(p.city+" "+p.state+" "+p.title+" "+(p.address||"")).toLowerCase().includes(q))&&(!t||p.type===t)&&(!b||Number(p.beds)>=Number(b))))}
-document.querySelector("#pSearch").addEventListener("click",filter);load();
-document.addEventListener("click",e=>{const a=e.target.closest(".property-map");if(!a)return;e.preventDefault();const destination=a.dataset.address;if(!navigator.geolocation){alert("EstateLux needs your location to open directions. Please enable location in your browser.");return}navigator.geolocation.getCurrentPosition(pos=>{const origin=pos.coords.latitude+","+pos.coords.longitude;window.open("https://www.google.com/maps/dir/?api=1&origin="+encodeURIComponent(origin)+"&destination="+encodeURIComponent(destination),"_blank","noopener");},()=>alert("Please turn on location permission for EstateLux so we can open directions from your current location."),{enableHighAccuracy:false,timeout:8000,maximumAge:300000})});
+const norm=s=>String(s||"").toLowerCase().replace(/,/g," ").replace(/\s+/g," ").trim();
+
+function normalize(p){
+  return {...p,id:p.id||crypto.randomUUID(),mode,title:p.title||p.formattedAddress?.split(",")[0]||"EstateLux Property",city:p.city||"",state:p.state||"",price:p.price,beds:p.bedrooms??"—",baths:p.bathrooms??"—",sqft:p.squareFootage||0,type:p.propertyType||"Property",tag:p.listingType?.toUpperCase()||(mode==="rent"?"RENT":"FOR SALE"),image:p.photo||p.photos?.[0]||DEMO.find(x=>x.mode===mode)?.image||DEMO[0].image,address:p.formattedAddress||p.address||"",description:p.description||"Property details supplied through the EstateLux listing feed.",lat:p.latitude,lng:p.longitude,photos:p.photos||[]};
+}
+
+function render(items){
+  const g=$("#propertyGrid"),e=$("#propertyEmpty");
+  if(!g)return;
+  if(!items.length){g.innerHTML="";e?.classList.remove("hidden");return}
+  e?.classList.add("hidden");
+  g.innerHTML=items.map(p=>`<article class="listing-card">
+    <div class="listing-image" style="background-image:url('${esc(p.image)}')">
+      <span class="badge">${esc(p.tag)}</span>
+      <button class="heart ${favorites.includes(p.id)?"saved":""}" data-save="${esc(p.id)}" aria-label="Save property">${favorites.includes(p.id)?"♥":"♡"}</button>
+    </div>
+    <div class="listing-info">
+      <div class="price">$ ${Number(p.price||0).toLocaleString()}${mode==="rent"?"/mo":""}</div>
+      <div class="listing-title">${esc(p.title)}</div>
+      <div class="address">${esc(p.address||p.city+", "+p.state)}</div>
+      <div class="stats"><span>${esc(p.beds)} bd</span><span>${esc(p.baths)} ba</span><span>${Number(p.sqft||0).toLocaleString()} sq ft</span></div>
+      <div class="card-actions">
+        <a class="primary" href="property.html?id=${encodeURIComponent(p.id)}&mode=${mode}">View Property</a>
+        <button data-map-id="${esc(p.id)}">Map</button>
+      </div>
+    </div>
+  </article>`).join("");
+}
+
+async function fetchLive(){
+  const qs=new URLSearchParams({mode,limit:"24"});
+  const loc=$("#pLocation")?.value.trim();
+  const type=$("#pType")?.value||"";
+  const beds=$("#pBeds")?.value||"";
+  if(loc)qs.set("location",loc);
+  if(type)qs.set("propertyType",type);
+  if(beds)qs.set("bedrooms",beds);
+  try{
+    const r=await fetch("/api/listings?"+qs.toString(),{cache:"no-store"});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error("Live listings unavailable");
+    all=Array.isArray(d.listings)&&d.listings.length?d.listings.map(normalize):DEMO.filter(x=>x.mode===mode);
+  }catch(e){
+    all=DEMO.filter(x=>x.mode===mode);
+  }
+  filterLocal();
+}
+
+function filterLocal(){
+  const q=norm($("#pLocation")?.value||"");
+  const type=$("#pType")?.value||"";
+  const beds=$("#pBeds")?.value||"";
+  const items=all.filter(p=>{
+    const hay=norm([p.title,p.city,p.state,p.address].join(" "));
+    return (!q||q.split(" ").filter(Boolean).every(x=>hay.includes(x)))&&(!type||norm(p.type)===norm(type))&&(!beds||Number(p.beds)>=Number(beds));
+  });
+  render(items);
+}
+
+function openMap(p){
+  const destination=p.lat&&p.lng?p.lat+","+p.lng:(p.address||p.city+", "+p.state);
+  const blank=window.open("about:blank","_blank");
+  const go=url=>{if(blank&&!blank.closed)blank.location.href=url;else location.href=url};
+  if(!navigator.geolocation){go("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(destination));return}
+  navigator.geolocation.getCurrentPosition(pos=>{
+    go("https://www.google.com/maps/dir/?api=1&origin="+encodeURIComponent(pos.coords.latitude+","+pos.coords.longitude)+"&destination="+encodeURIComponent(destination));
+  },()=>{
+    if(blank&&!blank.closed)blank.close();
+    alert("Please allow location access for EstateLux, then tap Map again.");
+  },{enableHighAccuracy:false,timeout:10000,maximumAge:300000});
+}
+
+document.addEventListener("click",async e=>{
+  const save=e.target.closest("[data-save]");
+  if(save){
+    const id=save.dataset.save;
+    favorites=favorites.includes(id)?favorites.filter(x=>x!==id):[...favorites,id];
+    localStorage.setItem("estatelux_favorites",JSON.stringify(favorites));
+    render(all.filter(p=>p.mode===mode));
+    return;
+  }
+  const map=e.target.closest("[data-map-id]");
+  if(map){const p=all.find(x=>x.id===map.dataset.mapId);if(p)openMap(p)}
+});
+
+$("#pSearch")?.addEventListener("click",fetchLive);
+$("#pLocation")?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();fetchLive()}});
+$("#pType")?.addEventListener("change",filterLocal);
+$("#pBeds")?.addEventListener("change",filterLocal);
+
+$("#pageTitle").textContent=mode==="rent"?"Rental properties":"Homes for sale";
+if($("#pType"))$("#pType").value=params.get("type")||"";
+fetchLive();
