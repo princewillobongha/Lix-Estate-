@@ -75,3 +75,14 @@ button,a,input,select{font:inherit}button{cursor:pointer}a{text-decoration:none;
 .mobile-notification{position:relative}.mobile-notification i{font-style:normal;color:#d4af37;font-size:10px}
 @media(max-width:850px){.property-detail{grid-template-columns:1fr}.property-gallery>img:first-child{height:420px}.property-filters{grid-template-columns:1fr 1fr}.property-filters input{grid-column:1/-1}}
 @media(max-width:620px){.menu-toggle{font-size:22px}.property-filters{grid-template-columns:1fr}.property-gallery{grid-template-columns:1fr}.property-gallery>img:first-child{height:320px}.property-gallery img{height:210px}.about-grid{grid-template-columns:1fr}.content-page{padding:70px 20px}.properties-hero{padding:75px 20px 35px}.property-page{padding:30px 18px}.property-stats{gap:18px}}
+
+
+/* EstateLux profile controls */
+.profile-button{width:42px;height:42px;border:1px solid rgba(212,175,55,.55);border-radius:50%;background:rgba(255,255,255,.05);color:#fff;display:grid;place-items:center;padding:0}
+.profile-button:hover{border-color:#d4af37;background:rgba(212,175,55,.12)}
+.profile-icon{font-size:20px;line-height:1}
+.avatar{overflow:hidden}
+.avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
+.avatar.large{width:96px;height:96px;font-size:30px}
+.profile-upload{display:flex;align-items:center;gap:18px;margin-bottom:8px}
+.file-btn{cursor:pointer;text-align:center}
