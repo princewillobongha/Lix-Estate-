@@ -298,8 +298,9 @@ document.addEventListener("submit",async e=>{
     const f=new FormData(e.target);
     const payload={name:f.get("name"),email:f.get("email"),phone:f.get("phone")||"",message:f.get("message"),user_id:currentUser?.id||null};
     try{
-      const db=await supabaseClient.from("inquiries").insert(payload);
+      const db=await supabaseClient.from("inquiries").insert(payload).select("id").single();
       if(db.error)throw db.error;
+      payload.inquiry_id=db.data.id;
       const r=await fetch("/api/inquiry",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
       if(!r.ok) console.warn("Email service is not configured yet.");
       e.target.innerHTML='<div class="success-box"><h3>Message received.</h3><p>Your message is safely stored with EstateLux. Email delivery will also notify the EstateLux team once the mail service is connected.</p><button type="button" class="gold-btn" onclick="closeModal()">Close</button></div>';
