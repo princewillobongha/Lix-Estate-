@@ -10,7 +10,14 @@ const DEMO_LISTINGS = [
 let mode = "sale";
 let listings = [...DEMO_LISTINGS];
 let filtered = [...listings];
-let favorites = JSON.parse(localStorage.getItem("estatelux_favorites") || "[]");\nconst supabaseClient = window.supabase?.createClient(window.ESTATELUX_SUPABASE_URL, window.ESTATELUX_SUPABASE_KEY);\nlet currentUser = null;
+let favorites = JSON.parse(localStorage.getItem("estatelux_favorites") || "[]");
+const supabaseClient = window.supabase?.createClient(
+  window.ESTATELUX_SUPABASE_URL,
+  window.ESTATELUX_SUPABASE_KEY
+);
+let currentUser = null;
+const supabaseClient = window.supabase?.createClient(window.ESTATELUX_SUPABASE_URL, window.ESTATELUX_SUPABASE_KEY);
+let currentUser = null;
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -115,7 +122,7 @@ function openModal(type,data){
   } else if(type==="contact"){
     html=`<span class="eyebrow dark">ESTATELUX CONTACT</span><h2>Request information</h2><p>Send an inquiry about a property or ask the EstateLux team a question.</p><form class="modal-form" id="contactForm"><input required name="name" placeholder="Full name"><input required type="email" name="email" placeholder="Email address"><input name="phone" placeholder="Phone number (optional)"><textarea required name="message" placeholder="How can we help?"></textarea><button class="gold-btn">Send request</button></form>`;
   } else if(type==="login"){
-    html=`<span class="eyebrow dark">ESTATELUX ACCOUNT</span><h2>Welcome back.</h2><p>Sign in to keep favorites, saved searches and alerts together. Account authentication will connect to the production database in the next phase.</p><form class="modal-form" id="loginForm"><input required type="email" placeholder="Email address"><input required type="password" placeholder="Password"><button class="gold-btn">Continue</button></form>`;
+    html=`<span class="eyebrow dark">ESTATELUX ACCOUNT</span><h2>Welcome back.</h2><p>Sign in or create your EstateLux account to save properties and searches.</p><form class="modal-form" id="loginForm"><input required name="email" type="email" placeholder="Email address"><input required name="password" type="password" minlength="6" placeholder="Password"><input name="full_name" placeholder="Full name (for new accounts)"><button class="gold-btn" type="submit">Sign in</button><button class="outline-btn" type="button" id="signupBtn">Create account</button><p id="authMessage"></p></form>`;
   } else if(type==="saved"){
     const saved=listings.filter(p=>favorites.includes(p.id));
     html=`<span class="eyebrow dark">YOUR COLLECTION</span><h2>Saved properties</h2>${saved.length?`<div class="saved-list">${saved.map(p=>`<div class="saved-row"><span>${esc(p.title)}<small> · ${esc(p.city)}, ${esc(p.state)}</small></span><button data-property="${esc(p.id)}">Open →</button></div>`).join("")}</div>`:`<p>You haven't saved any properties yet. Tap ♡ on a property to build your collection.</p>`}`;
@@ -144,10 +151,76 @@ $("#clearFilters").addEventListener("click",()=>{$("#locationInput").value="";$(
 $("#rentBtn").addEventListener("click",()=>{setMode("rent");$("#featured").scrollIntoView({behavior:"smooth"})});
 $("#modalClose").addEventListener("click",closeModal);
 $("#modalBackdrop").addEventListener("click",e=>{if(e.target.id==="modalBackdrop")closeModal()});
-document.addEventListener("submit",e=>{
-  if(e.target.id==="contactForm"||e.target.id==="loginForm"||e.target.id==="alertForm"){
+async function refreshAuth(){
+  if(!supabaseClient) return;
+  const {data} = await supabaseClient.auth.getUser();
+  currentUser = data?.user || null;
+}
+
+document.addEventListener("click", async e=>{
+  if(e.target.id !== "signupBtn") return;
+  const form = $("#loginForm");
+  const msg = $("#authMessage");
+  const f = new FormData(form);
+  msg.textContent = "Creating account...";
+  try{
+    const {error} = await supabaseClient.auth.signUp({
+      email: f.get("email"),
+      password: f.get("password"),
+      options: {data:{full_name:f.get("full_name") || ""}}
+    });
+    if(error) throw error;
+    msg.textContent = "Account created. Check your email if confirmation is required.";
+  }catch(err){ msg.textContent = err.message; }
+});
+
+document.addEventListener("submit", async e=>{
+  if(e.target.id==="loginForm"){
     e.preventDefault();
-    e.target.innerHTML=`<div style="padding:20px 0"><h3 style="font-family:Georgia,serif;font-size:28px">Thank you.</h3><p>Your request was captured in this demo. The production email/auth service will be connected next.</p><button type="button" class="gold-btn" onclick="closeModal()">Close</button></div>`;
+    const f = new FormData(e.target);
+    const msg = $("#authMessage");
+    msg.textContent = "Signing in...";
+    try{
+      const {error} = await supabaseClient.auth.signInWithPassword({
+        email:f.get("email"),
+        password:f.get("password")
+      });
+      if(error) throw error;
+      await refreshAuth();
+      closeModal();
+    }catch(err){ msg.textContent = err.message; }
+    return;
+  }
+
+  if(e.target.id==="contactForm"){
+    e.preventDefault();
+    try{
+      const f = new FormData(e.target);
+      if(supabaseClient){
+        const {error} = await supabaseClient.from("inquiries").insert({
+          user_id: currentUser?.id || null,
+          name:f.get("name"),
+          email:f.get("email"),
+          phone:f.get("phone") || null,
+          message:f.get("message") || null
+        });
+        if(error) throw error;
+      }
+      e.target.innerHTML=`<div style="padding:20px 0"><h3 style="font-family:Georgia,serif;font-size:28px">Thank you.</h3><p>Your inquiry has been submitted to EstateLux.</p><button type="button" class="gold-btn" onclick="closeModal()">Close</button></div>`;
+    }catch(err){
+      const msg=document.createElement("p");
+      msg.textContent=err.message;
+      msg.style.marginTop="12px";
+      e.target.appendChild(msg);
+    }
+    return;
+  }
+
+  if(e.target.id==="alertForm"){
+    e.preventDefault();
+    e.target.innerHTML=`<div style="padding:20px 0"><h3 style="font-family:Georgia,serif;font-size:28px">Alert saved.</h3><p>Your alert preferences will be connected to email delivery next.</p><button type="button" class="gold-btn" onclick="closeModal()">Close</button></div>`;
   }
 });
+
+refreshAuth();
 renderListings();
