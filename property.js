@@ -11,6 +11,7 @@ const params=new URLSearchParams(location.search);
 const id=params.get("id");
 const mode=params.get("mode")==="rent"?"rent":"sale";
 const CONTACT_EMAIL="rossiewhittaker@gmail.com";
+const $=s=>document.querySelector(s);
 let savedProperties=JSON.parse(localStorage.getItem("estatelux_saved_properties")||"[]");
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 let property=null;
@@ -69,20 +70,18 @@ function render(){
 
 function openContact(){
   $("#modalBackdrop").classList.remove("hidden");
-  $("#modalContent").innerHTML=`<span class="eyebrow dark">ESTATELUX CONTACT</span><h2>Request information</h2><p>Your request will be sent to <b>${CONTACT_EMAIL}</b>.</p><form class="modal-form" id="propertyContact"><input required name="name" placeholder="Full name"><input required type="email" name="email" placeholder="Email address"><input name="phone" placeholder="Phone number (optional)"><textarea required name="message">I'm interested in ${esc(property.title)} in ${esc(property.city)}, ${esc(property.state)}.</textarea><button class="gold-btn" type="submit">Send request</button></form><a class="mail-link" href="mailto:${CONTACT_EMAIL}?subject=EstateLux%20Property%20Inquiry">Email EstateLux directly: ${CONTACT_EMAIL}</a>`;
+  $("#modalContent").innerHTML=`<span class="eyebrow dark">ESTATELUX CONTACT</span><h2>Request information</h2><p>Send us your request and the EstateLux team will receive it securely.</p><form class="modal-form" id="propertyContact"><input required name="name" placeholder="Full name"><input required type="email" name="email" placeholder="Email address"><input name="phone" placeholder="Phone number (optional)"><textarea required name="message">I'm interested in ${esc(property.title)} in ${esc(property.city)}, ${esc(property.state)}.</textarea><button class="gold-btn" type="submit">Send request</button></form>`;
 }
 
 function openMap(){
   const destination=property.lat&&property.lng?property.lat+","+property.lng:(property.address||property.city+", "+property.state);
-  const blank=window.open("about:blank","_blank");
-  const go=url=>{if(blank&&!blank.closed)blank.location.href=url;else location.href=url};
-  if(!navigator.geolocation){go("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(destination));return}
+  const search="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(destination);
+  if(!navigator.geolocation){location.href=search;return}
   navigator.geolocation.getCurrentPosition(pos=>{
-    go("https://www.google.com/maps/dir/?api=1&origin="+encodeURIComponent(pos.coords.latitude+","+pos.coords.longitude)+"&destination="+encodeURIComponent(destination));
+    location.href="https://www.google.com/maps/dir/?api=1&origin="+encodeURIComponent(pos.coords.latitude+","+pos.coords.longitude)+"&destination="+encodeURIComponent(destination);
   },()=>{
-    if(blank&&!blank.closed)blank.close();
     alert("Please allow location access for EstateLux, then tap Open map again.");
-  },{enableHighAccuracy:false,timeout:10000,maximumAge:300000});
+  },{enableHighAccuracy:false,timeout:15000,maximumAge:300000});
 }
 
 document.addEventListener("click",e=>{
