@@ -16,8 +16,6 @@ const supabaseClient = window.supabase?.createClient(
   window.ESTATELUX_SUPABASE_KEY
 );
 let currentUser = null;
-const supabaseClient = window.supabase?.createClient(window.ESTATELUX_SUPABASE_URL, window.ESTATELUX_SUPABASE_KEY);
-let currentUser = null;
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
