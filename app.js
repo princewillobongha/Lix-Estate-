@@ -124,8 +124,8 @@ async function saveFavorite(id){
 function updateHeader(){
   const signins=$$('[data-open="login"]');
   signins.forEach(b=>{
-    b.textContent=currentUser?"Account":"Sign in";
     b.dataset.open=currentUser?"account":"login";
+    if(!b.closest(".mobile-nav")) b.textContent=currentUser?"Account":"Sign in";
   });
   const n=$("#notificationCount");
   if(n&&currentUser) loadNotifications();
