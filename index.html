@@ -19,13 +19,13 @@
     "@context":"https://schema.org",
     "@type":"Organization",
     "name":"EstateLux",
-    "url":"https://esport.vercel.app/",
-    "logo":"https://esport.vercel.app/assets/estatelux-logo.svg",
+    "url":"/",
+    "logo":"/assets/estatelux-logo.svg",
     "email":"mailto:rossiewhittaker@gmail.com",
     "description":"EstateLux is a U.S. real-estate discovery platform for finding homes, apartments and rental properties, saving favorites and searches, viewing locations and connecting with the EstateLux team."
   }
   </script>
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"EstateLux","url":"https://esport.vercel.app/","description":"U.S. real-estate discovery for homes, apartments and rentals."}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"EstateLux","url":"/","description":"U.S. real-estate discovery for homes, apartments and rentals."}</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
@@ -48,7 +48,7 @@
     <div class="header-actions">
       <button class="icon-btn" id="notificationBtn" data-open="notifications" aria-label="Notifications">🔔<span class="notification-count" id="notificationCount"></span></button>
       <button class="icon-btn" data-open="saved" aria-label="Saved properties">♡</button>
-      <button class="ghost-btn" id="loginBtn" data-auth-button data-open="login">Sign in</button>
+      <button class="profile-button" id="loginBtn" data-auth-button data-open="login" aria-label="Open EstateLux profile"><span class="profile-icon" aria-hidden="true">👤</span></button>
       <button class="gold-btn small" data-open="contact">Contact</button>
     </div>
   </header>
@@ -230,7 +230,7 @@
     <a href="properties.html?mode=sale">⌕<span>Search</span></a>
     <button data-open="saved">♡<span>Saved</span></button>
     <button data-open="notifications" class="mobile-notification">🔔<span>Updates</span><i id="mobileNotificationCount"></i></button>
-    <button data-auth-button data-open="login">👤<span>Account</span></button>
+    <button data-auth-button data-open="login" aria-label="Open EstateLux profile"><span class="profile-icon" aria-hidden="true">👤</span><span>Profile</span></button>
   </nav>
 
   <aside class="side-menu" id="sideMenu" aria-label="EstateLux menu">
