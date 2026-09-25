@@ -11,6 +11,7 @@ const params=new URLSearchParams(location.search);
 const id=params.get("id");
 const mode=params.get("mode")==="rent"?"rent":"sale";
 const CONTACT_EMAIL="rossiewhittaker@gmail.com";
+let savedProperties=JSON.parse(localStorage.getItem("estatelux_saved_properties")||"[]");
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 let property=null;
 
@@ -56,8 +57,11 @@ function render(){
   $("#contactProperty").addEventListener("click",openContact);
   $("#saveProperty").addEventListener("click",()=>{
     let saved=JSON.parse(localStorage.getItem("estatelux_favorites")||"[]");
-    saved=saved.includes(property.id)?saved.filter(x=>x!==property.id):[...saved,property.id];
+    const removing=saved.includes(property.id);
+    saved=removing?saved.filter(x=>x!==property.id):[...saved,property.id];
+    savedProperties=removing?savedProperties.filter(x=>x.id!==property.id):[...savedProperties.filter(x=>x.id!==property.id),property];
     localStorage.setItem("estatelux_favorites",JSON.stringify(saved));
+    localStorage.setItem("estatelux_saved_properties",JSON.stringify(savedProperties));
     $("#saveProperty").textContent=saved.includes(property.id)?"♥ Saved":"♡ Save property";
   });
   $("#propertyMap").addEventListener("click",openMap);
