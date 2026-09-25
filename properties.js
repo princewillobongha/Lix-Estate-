@@ -90,7 +90,12 @@ document.addEventListener("click",async e=>{
   const save=e.target.closest("[data-save]");
   if(save){
     const id=save.dataset.save;
-    const p=all.find(x=>x.id===id);\n    const removing=favorites.includes(id);\n    favorites=removing?favorites.filter(x=>x!==id):[...favorites,id];\n    savedProperties=removing?savedProperties.filter(x=>x.id!==id):[...savedProperties.filter(x=>x.id!==id),p].filter(Boolean);\n    localStorage.setItem("estatelux_favorites",JSON.stringify(favorites));\n    localStorage.setItem("estatelux_saved_properties",JSON.stringify(savedProperties));
+    const p=all.find(x=>x.id===id);
+    const removing=favorites.includes(id);
+    favorites=removing?favorites.filter(x=>x!==id):[...favorites,id];
+    savedProperties=removing?savedProperties.filter(x=>x.id!==id):[...savedProperties.filter(x=>x.id!==id),p].filter(Boolean);
+    localStorage.setItem("estatelux_favorites",JSON.stringify(favorites));
+    localStorage.setItem("estatelux_saved_properties",JSON.stringify(savedProperties));
     render(all.filter(p=>p.mode===mode));
     return;
   }
