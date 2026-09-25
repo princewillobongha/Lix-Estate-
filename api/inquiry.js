@@ -9,7 +9,6 @@ export default async function handler(req,res){
     const response=await fetch("https://api.resend.com/emails",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},body:JSON.stringify({
       from:process.env.ESTATELUX_FROM_EMAIL||"EstateLux <onboarding@resend.dev>",
       to:[to],
-      reply_to:[email],
       subject:"[EstateLux #"+String(inquiry_id||listing_id||"inquiry")+"]"+(listing_title?" — "+listing_title:""),
       reply_to:[process.env.ESTATELUX_REPLY_TO_EMAIL||email],
       html:"<h2>New EstateLux inquiry</h2><p><b>Name:</b> "+String(name).replace(/</g,"&lt;")+"</p><p><b>Email:</b> "+String(email).replace(/</g,"&lt;")+"</p><p><b>Phone:</b> "+String(phone||"").replace(/</g,"&lt;")+"</p><p><b>Property:</b> "+String(listing_title||listing_id||"General inquiry").replace(/</g,"&lt;")+"</p><p><b>Message:</b></p><p>"+String(message).replace(/</g,"&lt;").replace(/\n/g,"<br>")+"</p>"
