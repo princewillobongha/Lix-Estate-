@@ -11,6 +11,7 @@ const params=new URLSearchParams(location.search);
 let mode=params.get("mode")==="rent"?"rent":"sale";
 let all=[];
 let favorites=JSON.parse(localStorage.getItem("estatelux_favorites")||"[]");
+let savedProperties=JSON.parse(localStorage.getItem("estatelux_saved_properties")||"[]");
 
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 const norm=s=>String(s||"").toLowerCase().replace(/,/g," ").replace(/\s+/g," ").trim();
@@ -89,8 +90,7 @@ document.addEventListener("click",async e=>{
   const save=e.target.closest("[data-save]");
   if(save){
     const id=save.dataset.save;
-    favorites=favorites.includes(id)?favorites.filter(x=>x!==id):[...favorites,id];
-    localStorage.setItem("estatelux_favorites",JSON.stringify(favorites));
+    const p=all.find(x=>x.id===id);\n    const removing=favorites.includes(id);\n    favorites=removing?favorites.filter(x=>x!==id):[...favorites,id];\n    savedProperties=removing?savedProperties.filter(x=>x.id!==id):[...savedProperties.filter(x=>x.id!==id),p].filter(Boolean);\n    localStorage.setItem("estatelux_favorites",JSON.stringify(favorites));\n    localStorage.setItem("estatelux_saved_properties",JSON.stringify(savedProperties));
     render(all.filter(p=>p.mode===mode));
     return;
   }
