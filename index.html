@@ -9,7 +9,22 @@
   <meta property="og:title" content="EstateLux — Premium U.S. Real Estate">
   <meta property="og:description" content="Discover exceptional U.S. properties for sale and rent with EstateLux.">
   <meta property="og:type" content="website">
-  <link rel="icon" href="assets/estatelux-logo.jpg">
+  <meta property="og:site_name" content="EstateLux">
+  <meta property="og:image" content="https://estate-lux-sand.vercel.app/assets/estatelux-logo.svg">
+  <link rel="canonical" href="https://estate-lux-sand.vercel.app/">
+  <link rel="icon" type="image/svg+xml" href="/assets/estatelux-logo.svg">
+  <link rel="apple-touch-icon" href="/assets/estatelux-logo.svg">
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"Organization",
+    "name":"EstateLux",
+    "url":"https://estate-lux-sand.vercel.app/",
+    "logo":"https://estate-lux-sand.vercel.app/assets/estatelux-logo.svg",
+    "email":"mailto:rossiewhittaker@gmail.com",
+    "description":"EstateLux is a U.S. real-estate discovery platform for finding homes, apartments and rental properties, saving favorites and searches, viewing locations and connecting with the EstateLux team."
+  }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
@@ -29,9 +44,11 @@
       <a href="#about">About</a>
     </nav>
     <div class="header-actions">
+      <button class="icon-btn" id="notificationBtn" data-open="notifications" aria-label="Notifications">♧<span class="notification-count" id="notificationCount"></span></button>
       <button class="icon-btn" data-open="saved" aria-label="Saved properties">♡</button>
       <button class="ghost-btn" data-open="login">Sign in</button>
       <button class="gold-btn small" data-open="contact">Contact</button>
+      <button class="menu-toggle" id="menuToggle" aria-label="Open menu">☰</button>
     </div>
   </header>
 
@@ -132,7 +149,7 @@
           <div><span>02</span><p><b>Save favorites</b><br>Keep your shortlist in one place.</p></div>
           <div><span>03</span><p><b>Request information</b><br>Ask about a property directly.</p></div>
         </div>
-        <button class="gold-btn" data-scroll="#featured">Explore homes</button>
+        <a class="gold-btn" href="properties.html?mode=sale">Explore homes</a>
       </div>
     </section>
 
@@ -163,7 +180,7 @@
         <span class="eyebrow">SEARCH ACROSS AMERICA</span>
         <h2>From coast to coast.</h2>
         <p>EstateLux is designed for nationwide discovery. Search properties by city, state or ZIP and open a location directly in maps.</p>
-        <button class="gold-btn" data-scroll="#featured">Explore the market</button>
+        <a class="gold-btn" href="properties.html?mode=sale">Explore the market</a>
       </div>
       <div class="map-art" aria-label="Stylized U.S. map">
         <div class="map-grid"></div>
@@ -207,11 +224,24 @@
 
   <nav class="mobile-nav" aria-label="Mobile navigation">
     <a href="#home">⌂<span>Home</span></a>
-    <a href="#featured">⌕<span>Search</span></a>
+    <a href="properties.html?mode=sale">⌕<span>Search</span></a>
     <button data-open="saved">♡<span>Saved</span></button>
-    <button data-open="alerts">◷<span>Alerts</span></button>
+    <button data-open="notifications" class="mobile-notification">♧<span>Updates</span><i id="mobileNotificationCount"></i></button>
     <button data-open="login">◯<span>Account</span></button>
   </nav>
+
+  <aside class="side-menu" id="sideMenu" aria-label="EstateLux menu">
+    <button class="menu-close" id="menuClose" aria-label="Close menu">×</button>
+    <span class="eyebrow dark">ESTATELUX</span>
+    <h2>Explore more.</h2>
+    <p>Discover the parts of EstateLux that are different from your daily search tools.</p>
+    <a href="properties.html?mode=sale">Homes for sale</a>
+    <a href="properties.html?mode=rent">Rental homes</a>
+    <a href="about.html">Our mission & vision</a>
+    <a href="mailto:rossiewhittaker@gmail.com">Email EstateLux</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="terms.html">Terms</a>
+  </aside>
 
   <div class="modal-backdrop hidden" id="modalBackdrop">
     <div class="modal" role="dialog" aria-modal="true">
