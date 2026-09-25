@@ -16,6 +16,7 @@ let mode="sale";
 let listings=[...DEMO_LISTINGS];
 let filtered=[...listings];
 let favorites=JSON.parse(localStorage.getItem("estatelux_favorites")||"[]");
+let savedProperties=JSON.parse(localStorage.getItem("estatelux_saved_properties")||"[]");
 let currentUser=null;
 let currentProfile=null;
 
@@ -136,8 +137,12 @@ function setMode(next){
 }
 
 async function saveFavorite(id){
-  favorites=favorites.includes(id)?favorites.filter(x=>x!==id):[...favorites,id];
+  const p=listings.find(x=>x.id===id);
+  const removing=favorites.includes(id);
+  favorites=removing?favorites.filter(x=>x!==id):[...favorites,id];
+  savedProperties=removing?savedProperties.filter(x=>x.id!==id):[...savedProperties.filter(x=>x.id!==id),p].filter(Boolean);
   localStorage.setItem("estatelux_favorites",JSON.stringify(favorites));
+  localStorage.setItem("estatelux_saved_properties",JSON.stringify(savedProperties));
   if(currentUser&&supabaseClient){
     const p=listings.find(x=>x.id===id);
     try{
@@ -215,7 +220,7 @@ function openModal(type,data=null){
     const p=currentProfile||{};
     html=`<span class="eyebrow dark">PROFILE</span><h2>Your EstateLux profile</h2><form class="modal-form" id="profileForm"><input name="full_name" value="${esc(p.full_name||currentUser.user_metadata?.full_name||"")}" placeholder="Full name"><input name="username" value="${esc(p.username||"")}" placeholder="Username"><input name="phone" value="${esc(p.phone||"")}" placeholder="Phone number"><input name="country" value="${esc(p.country||"")}" placeholder="Country"><button class="gold-btn">Save profile</button><p id="profileMessage"></p></form>`;
   }else if(type==="saved"){
-    const saved=listings.filter(p=>favorites.includes(p.id));
+    const saved=savedProperties.filter(p=>favorites.includes(p.id));
     html=`<span class="eyebrow dark">YOUR COLLECTION</span><h2>Saved properties</h2>${saved.length?'<div class="saved-list">'+saved.map(p=>`<div class="saved-row"><span>${esc(p.title)}<small> · ${esc(p.city)}, ${esc(p.state)}</small></span><button data-property="${esc(p.id)}">Open →</button></div>`).join("")+"</div>":'<p>No saved properties yet. Tap ♡ on a property to build your collection.</p>'}`;
   }else if(type==="alerts"){
     if(!currentUser){openModal("login");return}
