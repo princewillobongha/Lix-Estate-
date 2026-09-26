@@ -393,11 +393,15 @@ document.addEventListener("submit",async e=>{
       if(dbError)throw dbError;
       const r=await fetch("/api/inquiry",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
       const data=await r.json().catch(()=>({}));
-      if(!r.ok)throw new Error(data.error?.message||data.error||"Email delivery failed");
+      if(!r.ok){
+        const emailIssue=typeof data.error==="string"?data.error:(data.error?.message||"Email delivery is not configured yet.");
+        form.innerHTML='<div class="success-box"><h3>Request received.</h3><p>Your request has been saved securely. EstateLux email notifications are not fully enabled yet, so the team may not receive the email notification until the sending domain is verified.</p><p class="form-error">'+esc(emailIssue)+'</p><button type="button" class="gold-btn" id="closeSuccess">Close</button></div>';
+        return;
+      }
       form.innerHTML='<div class="success-box"><h3>Thank you.</h3><p>Your request has been sent to EstateLux. We will review it and respond using the contact information you provided.</p><button type="button" class="gold-btn" id="closeSuccess">Close</button></div>';
     }catch(err){
       if(submit){submit.disabled=false;submit.textContent="Send request"}
-      form.insertAdjacentHTML("beforeend",'<p class="form-error">We could not send your request right now. Please try again.</p>');
+      form.insertAdjacentHTML("beforeend",'<p class="form-error">We could not save your request right now. Please try again.</p>');
     }
     return;
   }
