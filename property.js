@@ -12,15 +12,33 @@ const id=params.get("id");
 const mode=params.get("mode")==="rent"?"rent":"sale";
 const CONTACT_EMAIL="rossiewhittaker@gmail.com";
 const $=s=>document.querySelector(s);
+const SUPABASE_URL=window.ESTATELUX_SUPABASE_URL;
+const SUPABASE_KEY=window.ESTATELUX_SUPABASE_KEY;
+const supabaseClient=window.supabase?.createClient(SUPABASE_URL,SUPABASE_KEY);
+let currentUser=null;
 let savedProperties=JSON.parse(localStorage.getItem("estatelux_saved_properties")||"[]");
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 let property=null;
+
+async function syncCloudFavorites(){
+  if(!supabaseClient)return;
+  const {data:userData}=await supabaseClient.auth.getUser();
+  currentUser=userData?.user||null;
+  if(!currentUser)return;
+  const {data,error}=await supabaseClient.from("favorites").select("listing_id,listing_data").eq("user_id",currentUser.id);
+  if(error){console.warn("Favorites sync:",error);return}
+  const ids=(data||[]).map(x=>x.listing_id).filter(Boolean);
+  savedProperties=(data||[]).map(x=>x.listing_data).filter(Boolean);
+  localStorage.setItem("estatelux_favorites",JSON.stringify(ids));
+  localStorage.setItem("estatelux_saved_properties",JSON.stringify(savedProperties));
+}
 
 function normalize(x){
   return {...x,id:x.id||crypto.randomUUID(),mode,title:x.title||x.formattedAddress?.split(",")[0]||"EstateLux Property",city:x.city||"",state:x.state||"",price:x.price,beds:x.bedrooms??"—",baths:x.bathrooms??"—",sqft:x.squareFootage||0,type:x.propertyType||"Property",tag:x.listingType?.toUpperCase()||(mode==="rent"?"RENT":"FOR SALE"),image:x.photo||x.photos?.[0]||DEMO.find(p=>p.mode===mode)?.image||DEMO[0].image,address:x.formattedAddress||x.address||"",description:x.description||"Property details supplied through the EstateLux listing feed.",photos:x.photos||[],lat:x.latitude,lng:x.longitude};
 }
 
 async function load(){
+  await syncCloudFavorites();
   property=DEMO.find(x=>x.id===id&&x.mode===mode)||DEMO.find(x=>x.id===id)||null;
   try{
     const r=await fetch("/api/listings?mode="+mode+"&limit=100",{cache:"no-store"});
@@ -63,6 +81,15 @@ function render(){
     savedProperties=removing?savedProperties.filter(x=>x.id!==property.id):[...savedProperties.filter(x=>x.id!==property.id),property];
     localStorage.setItem("estatelux_favorites",JSON.stringify(saved));
     localStorage.setItem("estatelux_saved_properties",JSON.stringify(savedProperties));
+    if(currentUser&&supabaseClient){
+      if(removing){
+        const {error}=await supabaseClient.from("favorites").delete().eq("user_id",currentUser.id).eq("listing_id",property.id);
+        if(error)console.warn("Favorite delete:",error);
+      }else{
+        const {error}=await supabaseClient.from("favorites").upsert({user_id:currentUser.id,listing_id:property.id,listing_data:property},{onConflict:"user_id,listing_id"});
+        if(error)console.warn("Favorite save:",error);
+      }
+    }
     $("#saveProperty").textContent=saved.includes(property.id)?"♥ Saved":"♡ Save property";
   });
   $("#propertyMap").addEventListener("click",openMap);
@@ -100,6 +127,15 @@ document.addEventListener("submit",async e=>{
       payload.user_id=userData?.user?.id||null;
       const {error}=await client.from("inquiries").insert(payload);
       if(error)throw error;
+      if(payload.user_id){
+        await client.from("notifications").insert({
+          user_id:payload.user_id,
+          type:"inquiry",
+          title:"Request received",
+          message:"EstateLux received your property request for "+property.title+".",
+          link:"property.html?id="+encodeURIComponent(property.id)+"&mode="+encodeURIComponent(mode)
+        });
+      }
     }
     const r=await fetch("/api/inquiry",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
     const data=await r.json().catch(()=>({}));
