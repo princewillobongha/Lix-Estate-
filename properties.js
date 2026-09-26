@@ -12,9 +12,26 @@ let mode=params.get("mode")==="rent"?"rent":"sale";
 let all=[];
 let favorites=JSON.parse(localStorage.getItem("estatelux_favorites")||"[]");
 let savedProperties=JSON.parse(localStorage.getItem("estatelux_saved_properties")||"[]");
+const SUPABASE_URL=window.ESTATELUX_SUPABASE_URL;
+const SUPABASE_KEY=window.ESTATELUX_SUPABASE_KEY;
+const supabaseClient=window.supabase?.createClient(SUPABASE_URL,SUPABASE_KEY);
+let currentUser=null;
 
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 const norm=s=>String(s||"").toLowerCase().replace(/,/g," ").replace(/\s+/g," ").trim();
+
+async function syncCloudFavorites(){
+  if(!supabaseClient)return;
+  const {data:userData}=await supabaseClient.auth.getUser();
+  currentUser=userData?.user||null;
+  if(!currentUser)return;
+  const {data,error}=await supabaseClient.from("favorites").select("listing_id,listing_data").eq("user_id",currentUser.id);
+  if(error){console.warn("Favorites sync:",error);return}
+  favorites=(data||[]).map(x=>x.listing_id).filter(Boolean);
+  savedProperties=(data||[]).map(x=>x.listing_data).filter(Boolean);
+  localStorage.setItem("estatelux_favorites",JSON.stringify(favorites));
+  localStorage.setItem("estatelux_saved_properties",JSON.stringify(savedProperties));
+}
 
 function normalize(p){
   return {...p,id:p.id||crypto.randomUUID(),mode,title:p.title||p.formattedAddress?.split(",")[0]||"EstateLux Property",city:p.city||"",state:p.state||"",price:p.price,beds:p.bedrooms??"—",baths:p.bathrooms??"—",sqft:p.squareFootage||0,type:p.propertyType||"Property",tag:p.listingType?.toUpperCase()||(mode==="rent"?"RENT":"FOR SALE"),image:p.photo||p.photos?.[0]||DEMO.find(x=>x.mode===mode)?.image||DEMO[0].image,address:p.formattedAddress||p.address||"",description:p.description||"Property details supplied through the EstateLux listing feed.",lat:p.latitude,lng:p.longitude,photos:p.photos||[]};
@@ -96,6 +113,15 @@ document.addEventListener("click",async e=>{
     savedProperties=removing?savedProperties.filter(x=>x.id!==id):[...savedProperties.filter(x=>x.id!==id),p].filter(Boolean);
     localStorage.setItem("estatelux_favorites",JSON.stringify(favorites));
     localStorage.setItem("estatelux_saved_properties",JSON.stringify(savedProperties));
+    if(currentUser&&supabaseClient){
+      if(removing){
+        const {error}=await supabaseClient.from("favorites").delete().eq("user_id",currentUser.id).eq("listing_id",id);
+        if(error)console.warn("Favorite delete:",error);
+      }else{
+        const {error}=await supabaseClient.from("favorites").upsert({user_id:currentUser.id,listing_id:id,listing_data:p||null},{onConflict:"user_id,listing_id"});
+        if(error)console.warn("Favorite save:",error);
+      }
+    }
     render(all.filter(p=>p.mode===mode));
     return;
   }
@@ -110,4 +136,4 @@ $("#pBeds")?.addEventListener("change",filterLocal);
 
 $("#pageTitle").textContent=mode==="rent"?"Rental properties":"Homes for sale";
 if($("#pType"))$("#pType").value=params.get("type")||"";
-fetchLive();
+syncCloudFavorites().finally(fetchLive);
