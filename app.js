@@ -19,6 +19,7 @@ let favorites=JSON.parse(localStorage.getItem("estatelux_favorites")||"[]");
 let savedProperties=JSON.parse(localStorage.getItem("estatelux_saved_properties")||"[]");
 let currentUser=null;
 let currentProfile=null;
+let notificationChannel=null;
 
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
@@ -160,18 +161,53 @@ async function saveFavorite(id){
 }
 
 function updateHeader(){
-  const buttons=$$("[data-auth-button], #loginBtn");
+  const buttons=$("[data-auth-button], #loginBtn");
   buttons.forEach(b=>{
     b.dataset.open=currentUser?"account":"login";
-    if(b.closest(".mobile-nav")){
-      b.innerHTML='<span class="profile-icon" aria-hidden="true">👤</span><span>Profile</span>';
+    if(currentUser){
+      if(b.closest(".mobile-nav")){
+        b.innerHTML='<span class="profile-icon" aria-hidden="true">👤</span><span>Profile</span>';
+      }else{
+        b.innerHTML='<span class="profile-icon" aria-hidden="true">👤</span>';
+      }
+      b.classList.remove("auth-signin");
     }else{
-      b.innerHTML='<span class="profile-icon" aria-hidden="true">👤</span>';
+      if(b.closest(".mobile-nav")){
+        b.innerHTML='<span>Sign in</span>';
+      }else{
+        b.innerHTML='Sign in';
+      }
+      b.classList.add("auth-signin");
     }
   });
   if($("#notificationCount")&&currentUser)loadNotifications();
   else if($("#notificationCount"))$("#notificationCount").textContent="";
   if($("#mobileNotificationCount"))$("#mobileNotificationCount").textContent=$("#notificationCount")?.textContent||"";
+}
+
+async function loadCloudFavorites(){
+  if(!currentUser||!supabaseClient)return;
+  const {data,error}=await supabaseClient.from("favorites").select("listing_id,listing_data").eq("user_id",currentUser.id);
+  if(error){console.warn("Favorites sync:",error);return}
+  favorites=(data||[]).map(x=>x.listing_id).filter(Boolean);
+  savedProperties=(data||[]).map(x=>x.listing_data).filter(Boolean);
+  localStorage.setItem("estatelux_favorites",JSON.stringify(favorites));
+  localStorage.setItem("estatelux_saved_properties",JSON.stringify(savedProperties));
+  renderListings();
+}
+
+function subscribeNotifications(){
+  if(!supabaseClient||!currentUser)return;
+  if(notificationChannel){
+    try{supabaseClient.removeChannel(notificationChannel)}catch(e){}
+  }
+  notificationChannel=supabaseClient
+    .channel("estatelux-notifications-"+currentUser.id)
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications",filter:"user_id=eq."+currentUser.id},()=>{
+      loadNotifications();
+      if(!$("#modalBackdrop")?.classList.contains("hidden")&&$("#notificationList"))renderNotifications();
+    })
+    .subscribe();
 }
 
 async function refreshAuth(){
@@ -183,6 +219,10 @@ async function refreshAuth(){
     if(currentUser){
       const {data:profile}=await supabaseClient.from("profiles").select("*").eq("id",currentUser.id).maybeSingle();
       currentProfile=profile||null;
+      await loadCloudFavorites();
+      subscribeNotifications();
+    }else{
+      if(notificationChannel){try{supabaseClient.removeChannel(notificationChannel)}catch(e){} notificationChannel=null}
     }
   }catch(e){console.warn("Auth refresh:",e)}
   updateHeader();
@@ -301,7 +341,12 @@ document.addEventListener("click",async e=>{
 
   if(e.target.id==="signOutBtn"){
     await supabaseClient?.auth.signOut();
-    currentUser=null;currentProfile=null;updateHeader();closeModal();return;
+    currentUser=null;currentProfile=null;
+    favorites=[];savedProperties=[];
+    localStorage.removeItem("estatelux_favorites");
+    localStorage.removeItem("estatelux_saved_properties");
+    if(notificationChannel){try{supabaseClient.removeChannel(notificationChannel)}catch(e){} notificationChannel=null}
+    updateHeader();closeModal();renderListings();return;
   }
 
   if(e.target.id==="googleSignInBtn"){
@@ -360,7 +405,7 @@ document.addEventListener("submit",async e=>{
       let avatar_url=currentProfile?.avatar_url||null;
       const file=f.get("profile_picture");
       if(file&&file.size){
-        avatar_url=await new Promise((resolve,reject)=>{
+        const dataUrl=await new Promise((resolve,reject)=>{
           const reader=new FileReader();
           reader.onload=()=>{
             const img=new Image();
@@ -369,17 +414,27 @@ document.addEventListener("submit",async e=>{
               canvas.width=size;canvas.height=size;
               const scale=Math.max(size/img.width,size/img.height),w=img.width*scale,h=img.height*scale;
               ctx.drawImage(img,(size-w)/2,(size-h)/2,w,h);
-              resolve(canvas.toDataURL("image/jpeg",0.82));
+              resolve(canvas.toDataURL("image/jpeg",0.86));
             };
             img.onerror=reject;img.src=reader.result;
           };
           reader.onerror=reject;reader.readAsDataURL(file);
         });
+        const blob=await (await fetch(dataUrl)).blob();
+        const path=currentUser.id+"/"+crypto.randomUUID()+".jpg";
+        const {error:uploadError}=await supabaseClient.storage.from("avatars").upload(path,blob,{contentType:"image/jpeg",upsert:true,cacheControl:"3600"});
+        if(uploadError)throw uploadError;
+        const {data:publicData}=supabaseClient.storage.from("avatars").getPublicUrl(path);
+        avatar_url=publicData?.publicUrl||avatar_url;
       }
-      const {data,error}=await supabaseClient.from("profiles").upsert({id:currentUser.id,full_name:f.get("full_name")||null,username:f.get("username")||null,phone:f.get("phone")||null,country:f.get("country")||null,avatar_url}).select().single();
+      const profilePayload={id:currentUser.id,full_name:String(f.get("full_name")||"").trim()||null,username:String(f.get("username")||"").trim()||null,phone:String(f.get("phone")||"").trim()||null,country:String(f.get("country")||"").trim()||null,avatar_url};
+      const {data,error}=await supabaseClient.from("profiles").upsert(profilePayload,{onConflict:"id"}).select().single();
       if(error)throw error;
       currentProfile=data;msg.textContent="Profile saved.";updateHeader();setTimeout(()=>openModal("account"),350);
-    }catch(err){msg.textContent="Could not save your profile. Please try again."}
+    }catch(err){
+      console.error("Profile save error:",err);
+      msg.textContent=err?.message||"Could not save your profile. Please try again.";
+    }
     return;
   }
 
@@ -389,8 +444,17 @@ document.addEventListener("submit",async e=>{
     const payload={name:String(f.get("name")||"").trim(),email:String(f.get("email")||"").trim(),phone:String(f.get("phone")||"").trim(),message:String(f.get("message")||"").trim(),user_id:currentUser?.id||null,listing_id:f.get("listing_id")||null,listing_title:f.get("listing_title")||""};
     const submit=form.querySelector("button[type=submit]");if(submit){submit.disabled=true;submit.textContent="Sending…"}
     try{
-      const {error:dbError}=await supabaseClient.from("inquiries").insert(payload);
+      const {data:inquiryRow,error:dbError}=await supabaseClient.from("inquiries").insert(payload).select("id").single();
       if(dbError)throw dbError;
+      if(currentUser){
+        await supabaseClient.from("notifications").insert({
+          user_id:currentUser.id,
+          type:"inquiry",
+          title:"Request received",
+          message:"EstateLux received your property request"+(payload.listing_title?" for "+payload.listing_title+".":"."),
+          link:payload.listing_id?"property.html?id="+encodeURIComponent(payload.listing_id):""
+        });
+      }
       const r=await fetch("/api/inquiry",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
       const data=await r.json().catch(()=>({}));
       if(!r.ok){
@@ -420,7 +484,18 @@ document.addEventListener("submit",async e=>{
   }
 });
 
-document.addEventListener("click",e=>{if(e.target.id==="closeSuccess")closeModal()});
+document.addEventListener("click",async e=>{
+  if(e.target.id==="closeSuccess")closeModal();
+  const row=e.target.closest("[data-notification]");
+  if(row&&currentUser&&supabaseClient){
+    const id=row.dataset.notification;
+    await supabaseClient.from("notifications").update({read:true}).eq("id",id).eq("user_id",currentUser.id);
+    row.classList.remove("unread");
+    loadNotifications();
+    const link=row.dataset.link;
+    if(link)location.href=link;
+  }
+});
 $$(".search-tabs button").forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
 $("#modalBackdrop")?.addEventListener("click",e=>{if(e.target.id==="modalBackdrop")closeModal()});
 supabaseClient?.auth.onAuthStateChange(()=>setTimeout(refreshAuth,0));
