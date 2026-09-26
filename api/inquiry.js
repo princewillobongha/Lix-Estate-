@@ -74,9 +74,6 @@ export default async function handler(req,res){
     return res.status(503).json({
       error:"EstateLux email delivery is not configured yet."
     });
-    return res.status(503).json({
-      error:"EstateLux email delivery is not configured yet."
-    });
   }catch(e){
     console.error("EstateLux inquiry email error:",e);
     return res.status(500).json({
