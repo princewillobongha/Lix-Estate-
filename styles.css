@@ -86,3 +86,11 @@ button,a,input,select{font:inherit}button{cursor:pointer}a{text-decoration:none;
 .avatar.large{width:96px;height:96px;font-size:30px}
 .profile-upload{display:flex;align-items:center;gap:18px;margin-bottom:8px}
 .file-btn{cursor:pointer;text-align:center}
+
+
+/* Mobile bottom navigation sizing */
+@media(max-width:620px){
+  .mobile-nav>a,.mobile-nav>button{flex:1;min-width:0;width:20%;height:58px;justify-content:center;gap:5px;font-size:24px;padding:4px 0}
+  .mobile-nav .profile-icon{display:block;font-size:24px;line-height:1;transform:scale(1.12)}
+  .mobile-nav span:not(.profile-icon){font-size:10px;line-height:1.1}
+}
