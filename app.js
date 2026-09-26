@@ -361,10 +361,15 @@ document.addEventListener("click",async e=>{
     const f=new FormData($("#loginForm")),msg=$("#authMessage");
     msg.textContent="Creating account…";
     try{
-      const {data,error}=await supabaseClient.auth.signUp({email:String(f.get("email")||"").trim(),password:String(f.get("password")||""),options:{emailRedirectTo:location.origin+"/",data:{full_name:String(f.get("full_name")||"").trim(),username:String(f.get("username")||"").trim()}}});
-      if(error)throw error;
-      msg.textContent=data.session?"Account created and signed in.":"Account created. Check your email to confirm your EstateLux account, then tap the confirmation link to return here.";
-      if(data.session){await refreshAuth();setTimeout(closeModal,500)}
+      const response=await fetch("/api/signup",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+        email:String(f.get("email")||"").trim(),
+        password:String(f.get("password")||""),
+        full_name:String(f.get("full_name")||"").trim(),
+        username:String(f.get("username")||"").trim()
+      })});
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(data.error||"Could not create your account.");
+      msg.textContent=data.message||"EstateLux sent a confirmation email. Tap the link in that email to finish creating your account."
     }catch(err){msg.textContent=err.message}
     return;
   }
