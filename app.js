@@ -161,7 +161,7 @@ async function saveFavorite(id){
 }
 
 function updateHeader(){
-  const buttons=$("[data-auth-button], #loginBtn");
+  const buttons=[...document.querySelectorAll("[data-auth-button], #loginBtn")];
   buttons.forEach(b=>{
     b.dataset.open=currentUser?"account":"login";
     if(currentUser){
