@@ -274,6 +274,10 @@ function openModal(type,data=null){
     html=`<span class="eyebrow dark">LOCATION ACCESS</span><h2>Turn on your location</h2><p>EstateLux uses your location only to calculate directions from you to a property. After allowing it, tap the map button again.</p><button class="gold-btn" id="retryLocation">Try again</button>`;
   }
   content.innerHTML=html;
+  if(type==="login"){
+    const emailInput=$("#loginForm input[name='email']");
+    if(emailInput){emailInput.value="";emailInput.setAttribute("autocomplete","off");}
+  }
   if(type==="notifications")renderNotifications();
   if(type==="profile"){$("#profilePicture")?.addEventListener("change",e=>{const f=e.target.files?.[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{$("#profilePreview").innerHTML=`<img src="${esc(reader.result)}" alt="Profile picture preview">`};reader.readAsDataURL(f)});}
 }
