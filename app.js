@@ -446,6 +446,7 @@ document.addEventListener("submit",async e=>{
     try{
       const {data:inquiryRow,error:dbError}=await supabaseClient.from("inquiries").insert(payload).select("id").single();
       if(dbError)throw dbError;
+      payload.inquiry_id=inquiryRow?.id||"";
       if(currentUser){
         await supabaseClient.from("notifications").insert({
           user_id:currentUser.id,
