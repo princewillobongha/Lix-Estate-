@@ -21,7 +21,8 @@ export default async function handler(req,res){
     }[m]));
 
     const to=process.env.ESTATELUX_CONTACT_EMAIL||"rossiewhittaker@gmail.com";
-    const subject="EstateLux property request"+(listingTitle?" — "+listingTitle:"");
+    const inquiryId=String(body.inquiry_id||"").trim();
+    const subject="EstateLux property request"+(inquiryId?" [EstateLux #"+inquiryId+"]":"")+(listingTitle?" — "+listingTitle:"");
 
     /*
       Gmail SMTP is the no-custom-domain option for EstateLux.
