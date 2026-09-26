@@ -249,7 +249,7 @@ function openModal(type,data=null){
     const listingId=data?.id||"",listingTitle=data?.title||"";
     html=`<span class="eyebrow dark">ESTATELUX CONTACT</span><h2>Request information</h2><p>Send us your request and the EstateLux team will receive it securely.</p><form class="modal-form" id="contactForm"><input required name="name" placeholder="Full name"><input required type="email" name="email" placeholder="Email address"><input name="phone" placeholder="Phone number (optional)"><input type="hidden" name="listing_id" value="${esc(listingId)}"><input type="hidden" name="listing_title" value="${esc(listingTitle)}"><textarea required name="message" placeholder="How can we help?">${listingTitle?"I am interested in "+esc(listingTitle)+".":""}</textarea><button class="gold-btn" type="submit">Send request</button></form>`;
   }else if(type==="login"){
-    html=`<span class="eyebrow dark">ESTATELUX ACCOUNT</span><h2>Welcome to EstateLux.</h2><p>Sign in to manage your profile, saved properties, alerts and notifications.</p><form class="modal-form" id="loginForm"><input required name="email" type="email" placeholder="Email address"><input required name="password" type="password" minlength="6" placeholder="Password"><input name="full_name" placeholder="Full name (for new accounts)"><input name="username" placeholder="Username (for new accounts)"><button class="gold-btn" type="submit">Sign in</button><button class="outline-btn" type="button" id="googleSignInBtn">Continue with Google</button><button class="outline-btn" type="button" id="signupBtn">Create account</button><p id="authMessage"></p></form>`;
+    html=`<span class="eyebrow dark">ESTATELUX ACCOUNT</span><h2>Welcome to EstateLux.</h2><p>Sign in to manage your profile, saved properties, alerts and notifications.</p><form class="modal-form" id="loginForm"><input required name="email" type="email" autocomplete="email" placeholder="Email address"><input required name="password" type="password" minlength="6" autocomplete="current-password" placeholder="Password"><input name="full_name" placeholder="Full name (for new accounts)"><input name="username" placeholder="Username (for new accounts)"><button class="gold-btn" type="submit">Sign in</button><button class="outline-btn" type="button" id="googleSignInBtn">Continue with Google</button><button class="outline-btn" type="button" id="signupBtn">Create account</button><p id="authMessage"></p></form>`;
   }else if(type==="account"){
     if(!currentUser){openModal("login");return}
     const name=currentProfile?.full_name||currentUser.user_metadata?.full_name||"EstateLux member";
@@ -361,9 +361,9 @@ document.addEventListener("click",async e=>{
     const f=new FormData($("#loginForm")),msg=$("#authMessage");
     msg.textContent="Creating account…";
     try{
-      const {data,error}=await supabaseClient.auth.signUp({email:f.get("email"),password:f.get("password"),options:{data:{full_name:f.get("full_name")||"",username:f.get("username")||""}}});
+      const {data,error}=await supabaseClient.auth.signUp({email:String(f.get("email")||"").trim(),password:String(f.get("password")||""),options:{emailRedirectTo:location.origin+"/",data:{full_name:String(f.get("full_name")||"").trim(),username:String(f.get("username")||"").trim()}}});
       if(error)throw error;
-      msg.textContent=data.session?"Account created and signed in.":"Account created. Check your email if confirmation is enabled.";
+      msg.textContent=data.session?"Account created and signed in.":"Account created. Check your email to confirm your EstateLux account, then tap the confirmation link to return here.";
       if(data.session){await refreshAuth();setTimeout(closeModal,500)}
     }catch(err){msg.textContent=err.message}
     return;
