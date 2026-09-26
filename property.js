@@ -125,8 +125,9 @@ document.addEventListener("submit",async e=>{
     if(client){
       const {data:userData}=await client.auth.getUser();
       payload.user_id=userData?.user?.id||null;
-      const {error}=await client.from("inquiries").insert(payload);
+      const {data:inquiryRow,error}=await client.from("inquiries").insert(payload).select("id").single();
       if(error)throw error;
+      payload.inquiry_id=inquiryRow?.id||"";
       if(payload.user_id){
         await client.from("notifications").insert({
           user_id:payload.user_id,
