@@ -395,7 +395,7 @@ document.addEventListener("submit",async e=>{
       const data=await r.json().catch(()=>({}));
       if(!r.ok){
         const emailIssue=typeof data.error==="string"?data.error:(data.error?.message||"Email delivery is not configured yet.");
-        form.innerHTML='<div class="success-box"><h3>Request received.</h3><p>Your request has been saved securely. EstateLux email notifications are not fully enabled yet, so the team may not receive the email notification until the sending domain is verified.</p><p class="form-error">'+esc(emailIssue)+'</p><button type="button" class="gold-btn" id="closeSuccess">Close</button></div>';
+        form.innerHTML='<div class="success-box"><h3>Request received.</h3><p>Your request has been saved securely. The EstateLux team email notification is not fully configured yet.</p><p class="form-error">'+esc(emailIssue)+'</p><button type="button" class="gold-btn" id="closeSuccess">Close</button></div>';
         return;
       }
       form.innerHTML='<div class="success-box"><h3>Thank you.</h3><p>Your request has been sent to EstateLux. We will review it and respond using the contact information you provided.</p><button type="button" class="gold-btn" id="closeSuccess">Close</button></div>';
