@@ -249,7 +249,8 @@ function openModal(type,data=null){
     const listingId=data?.id||"",listingTitle=data?.title||"";
     html=`<span class="eyebrow dark">ESTATELUX CONTACT</span><h2>Request information</h2><p>Send us your request and the EstateLux team will receive it securely.</p><form class="modal-form" id="contactForm"><input required name="name" placeholder="Full name"><input required type="email" name="email" placeholder="Email address"><input name="phone" placeholder="Phone number (optional)"><input type="hidden" name="listing_id" value="${esc(listingId)}"><input type="hidden" name="listing_title" value="${esc(listingTitle)}"><textarea required name="message" placeholder="How can we help?">${listingTitle?"I am interested in "+esc(listingTitle)+".":""}</textarea><button class="gold-btn" type="submit">Send request</button></form>`;
   }else if(type==="login"){
-    html=`<span class="eyebrow dark">ESTATELUX ACCOUNT</span><h2>Welcome to EstateLux.</h2><p>Sign in to manage your profile, saved properties, alerts and notifications.</p><form class="modal-form" id="loginForm"><input required name="email" type="email" autocomplete="email" placeholder="Email address"><input required name="password" type="password" minlength="6" autocomplete="current-password" placeholder="Password"><input name="full_name" placeholder="Full name (for new accounts)"><input name="username" placeholder="Username (for new accounts)"><button class="gold-btn" type="submit">Sign in</button><button class="outline-btn" type="button" id="googleSignInBtn">Continue with Google</button><button class="outline-btn" type="button" id="signupBtn">Create account</button><p id="authMessage"></p></form>`;
+    html=`<span class="eyebrow dark">ESTATELUX ACCOUNT</span><h2>Welcome to EstateLux.</h2><p>Sign in to manage your profile, saved properties, alerts and notifications.</p><form class="modal-form" id="loginForm"><input required name="email" type="email" autocomplete="email" placeholder="Email address"><input required name="password" type="password" minlength="6" autocomplete="current-password" placeholder="Password"><input name="full_name" placeholder="Full name (for new accounts)"><input name="username" placeholder="Username (for new accounts)"><button class="gold-btn" type="submit">Sign in</button><button class="text-btn" type="button" id="forgotPasswordBtn">Forgot password?</button><button class="outline-btn" type="button" id="googleSignInBtn">Continue with Google</button><button class="outline-btn" type="button" id="signupBtn">Create account</button><p id="authMessage"></p></form>`;
+  }else if(type==="reset"){html=`<span class="eyebrow dark">ESTATELUX ACCOUNT</span><h2>Choose a new password.</h2><form class="modal-form" id="resetForm"><input required type="password" name="password" minlength="6" autocomplete="new-password" placeholder="New password"><input required type="password" name="confirm" minlength="6" autocomplete="new-password" placeholder="Confirm new password"><button class="gold-btn" type="submit">Update password</button><p id="resetMessage"></p></form>`;
   }else if(type==="account"){
     if(!currentUser){openModal("login");return}
     const name=currentProfile?.full_name||currentUser.user_metadata?.full_name||"EstateLux member";
@@ -361,6 +362,14 @@ document.addEventListener("click",async e=>{
     return;
   }
 
+  if(e.target.id==="forgotPasswordBtn"){
+    const email=String(document.querySelector("#loginForm input[name=email]")?.value||"").trim();
+    if(!email){$("#authMessage").textContent="Enter your email address first.";return;}
+    try{const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:location.origin});if(error)throw error;$("#authMessage").textContent="Password reset email sent. Check your inbox."}
+    catch(err){$("#authMessage").textContent=err.message||"Could not send the reset email."}
+    return;
+  }
+
   if(e.target.id==="signupBtn"){
     const f=new FormData($("#loginForm")),msg=$("#authMessage");
     msg.textContent="Creating account…";
@@ -391,6 +400,15 @@ document.addEventListener("submit",async e=>{
     localFilter();
     $("#featured")?.scrollIntoView({behavior:"smooth"});
     await loadApi();
+    return;
+  }
+
+  if(e.target.id==="resetForm"){
+    e.preventDefault();
+    const f=new FormData(e.target),msg=$("#resetMessage"),password=String(f.get("password")||""),confirm=String(f.get("confirm")||"");
+    if(password!==confirm){msg.textContent="Passwords do not match.";return;}
+    try{const {error}=await supabaseClient.auth.updateUser({password});if(error)throw error;msg.textContent="Password updated successfully.";setTimeout(()=>{closeModal();refreshAuth();},700)}
+    catch(err){msg.textContent=err.message||"Could not update your password."}
     return;
   }
 
@@ -508,7 +526,7 @@ document.addEventListener("click",async e=>{
 });
 $$(".search-tabs button").forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
 $("#modalBackdrop")?.addEventListener("click",e=>{if(e.target.id==="modalBackdrop")closeModal()});
-supabaseClient?.auth.onAuthStateChange(()=>setTimeout(refreshAuth,0));
+supabaseClient?.auth.onAuthStateChange((event)=>setTimeout(()=>{if(event==="PASSWORD_RECOVERY")openModal("reset");refreshAuth();},0));
 refreshAuth();
 setMode("sale");
 
