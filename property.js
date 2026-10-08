@@ -74,7 +74,7 @@ function render(){
   </section>`;
 
   $("#contactProperty").addEventListener("click",openContact);
-  $("#saveProperty").addEventListener("click",()=>{
+  $("#saveProperty").addEventListener("click",async ()=>{
     let saved=JSON.parse(localStorage.getItem("estatelux_favorites")||"[]");
     const removing=saved.includes(property.id);
     saved=removing?saved.filter(x=>x!==property.id):[...saved,property.id];
