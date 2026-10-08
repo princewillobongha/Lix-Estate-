@@ -65,9 +65,11 @@ async function fetchLive(){
   const loc=$("#pLocation")?.value.trim();
   const type=$("#pType")?.value||"";
   const beds=$("#pBeds")?.value||"";
+  const budget=$("#pBudget")?.value||"";
   if(loc)qs.set("location",loc);
   if(type)qs.set("propertyType",type);
   if(beds)qs.set("bedrooms",beds);
+  if(budget)qs.set("price",budget);
   try{
     const r=await fetch("/api/listings?"+qs.toString(),{cache:"no-store"});
     const d=await r.json().catch(()=>({}));
@@ -83,9 +85,10 @@ function filterLocal(){
   const q=norm($("#pLocation")?.value||"");
   const type=$("#pType")?.value||"";
   const beds=$("#pBeds")?.value||"";
+  const budget=$("#pBudget")?.value||"";
   const items=all.filter(p=>{
     const hay=norm([p.title,p.city,p.state,p.address].join(" "));
-    return (!q||q.split(" ").filter(Boolean).every(x=>hay.includes(x)))&&(!type||norm(p.type)===norm(type))&&(!beds||Number(p.beds)>=Number(beds));
+    return (!q||q.split(" ").filter(Boolean).every(x=>hay.includes(x)))&&(!type||norm(p.type)===norm(type))&&(!beds||Number(p.beds)>=Number(beds))&&(!budget||Number(p.price)<=Number(budget));
   });
   render(items);
 }
@@ -133,6 +136,16 @@ $("#pSearch")?.addEventListener("click",fetchLive);
 $("#pLocation")?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();fetchLive()}});
 $("#pType")?.addEventListener("change",filterLocal);
 $("#pBeds")?.addEventListener("change",filterLocal);
+$("#pBudget")?.addEventListener("change",filterLocal);
+
+function updateBudgetOptions(){
+  const select=$("#pBudget");
+  if(!select)return;
+  const values=mode==="rent"?[1500,2500,4000,6000,10000]:[300000,500000,750000,1000000,2000000];
+  const labels=mode==="rent"?["$1.5k","$2.5k","$4k","$6k","$10k"]:["$300k","$500k","$750k","$1M","$2M"];
+  select.innerHTML='<option value="">Any budget</option>'+values.map((v,i)=>`<option value="${v}">${labels[i]}</option>`).join("");
+}
+updateBudgetOptions();
 
 $("#pageTitle").textContent=mode==="rent"?"Rental properties":"Homes for sale";
 if($("#pType"))$("#pType").value=params.get("type")||"";
