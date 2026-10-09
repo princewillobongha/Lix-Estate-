@@ -5,7 +5,7 @@ function firstText(...values) {
 }
 
 function photoUrl(photo) {
-  if (typeof photo === "string") return photo;
+  if (typeof photo === "string") return photo.replace(/^http:\/\//i, "https://");
   if (!photo || typeof photo !== "object") return "";
   return firstText(photo.href, photo.url, photo.src, photo.image_url, photo.full_size_url);
 }
@@ -74,7 +74,8 @@ export default async function handler(req, res) {
     resultCount: String(Math.min(50, Math.max(1, Number(q.limit) || 24))),
     page: String(Math.max(1, Number(q.page) || 1)),
     sortOrder: "Newest",
-    hasPhotos: "true"
+    hasPhotos: "true",
+    daysOnMarketMax: "90"
   });
 
   const propertyType = String(q.propertyType || "").trim();
@@ -113,7 +114,9 @@ export default async function handler(req, res) {
     const raw = Array.isArray(data)
       ? data
       : (data.searchResults || data.results || data.listings || data.properties || data.data || data.hits || []);
-    const listings = Array.isArray(raw) ? raw.map(item => normalizeListing(item, mode)) : [];
+    const listings = Array.isArray(raw)
+      ? raw.map(item => normalizeListing(item, mode)).filter(item => item.price > 0 && item.photo && (!item.status || item.status.toLowerCase().includes(mode === "rent" ? "rent" : "sale")))
+      : [];
 
     res.setHeader("Cache-Control", "s-maxage=180, stale-while-revalidate=300");
     return res.status(200).json({
