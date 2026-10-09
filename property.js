@@ -45,7 +45,7 @@ async function load(){
   const savedFromStorage=[...savedProperties,...JSON.parse(localStorage.getItem("estatelux_saved_properties")||"[]")].find(x=>String(x?.id)===String(id));
   property=DEMO.find(x=>x.id===id&&x.mode===mode)||DEMO.find(x=>x.id===id)||savedFromStorage||null;
   const detailPropertyId=requestedPropertyId||property?.propertyId||"";
-  if(detailPropertyId&&/^\\d+$/.test(detailPropertyId)){
+  if(detailPropertyId&&/^\d+$/.test(detailPropertyId)){
     try{
       const qs=new URLSearchParams({propertyId:detailPropertyId,listingId:requestedListingId,mode});
       const response=await fetch("/api/property-details?"+qs.toString(),{cache:"no-store"});
@@ -57,16 +57,18 @@ async function load(){
     }catch(error){console.warn("EstateLux full property details unavailable:",error)}
   }
   if(property) render();
-  try{
-    const searchLocation=property?[property.city,property.state].filter(Boolean).join(", "):requestedLocation;
-    const qs=new URLSearchParams({mode,limit:"50"});
-    if(searchLocation)qs.set("location",searchLocation);
-    const r=await fetch("/api/listings?"+qs.toString(),{cache:"no-store"});
-    const d=await r.json().catch(()=>({}));
-    const live=(d.listings||[]).map(normalize);
-    const matched=live.find(x=>String(x.id)===String(id));
-    if(matched){property={...(property||{}),...matched,description:((matched.description||"").trim()==="Property details supplied by the listing source."?"":matched.description)||property?.description||""};render();}
-  }catch(e){}
+  if(!property){
+    try{
+      const searchLocation=requestedLocation;
+      const qs=new URLSearchParams({mode,limit:"50"});
+      if(searchLocation)qs.set("location",searchLocation);
+      const r=await fetch("/api/listings?"+qs.toString(),{cache:"no-store"});
+      const d=await r.json().catch(()=>({}));
+      const live=(d.listings||[]).map(normalize);
+      const matched=live.find(x=>String(x.id)===String(id));
+      if(matched){property=matched;render();}
+    }catch(e){console.warn("EstateLux listing fallback failed:",e)}
+  }
   if(!property){
     $("#propertyPage").innerHTML="<div class='section'><h1>Property details</h1><p>This listing is no longer available in the current live feed. You can still browse similar properties in the same area.</p><a class='gold-btn' href='properties.html?mode="+mode+"'>Browse properties</a></div>";
     return;
