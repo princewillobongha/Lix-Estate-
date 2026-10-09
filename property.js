@@ -10,6 +10,9 @@ const DEMO=[
 const params=new URLSearchParams(location.search);
 const id=params.get("id");
 const mode=params.get("mode")==="rent"?"rent":"sale";
+const requestedPropertyId=params.get("propertyId")||"";
+const requestedListingId=params.get("listingId")||params.get("id")||"";
+const requestedLocation=params.get("location")||"";
 const CONTACT_EMAIL="rossiewhittaker@gmail.com";
 const $=s=>document.querySelector(s);
 const SUPABASE_URL=window.ESTATELUX_SUPABASE_URL;
@@ -34,16 +37,28 @@ async function syncCloudFavorites(){
 }
 
 function normalize(x){
-  return {...x,id:x.id||crypto.randomUUID(),mode,title:x.title||x.formattedAddress?.split(",")[0]||"EstateLux Property",city:x.city||"",state:x.state||"",price:x.price,beds:x.bedrooms??"—",baths:x.bathrooms??"—",sqft:x.squareFootage||0,type:x.propertyType||"Property",tag:x.listingType?.toUpperCase()||(mode==="rent"?"RENT":"FOR SALE"),image:x.photo||x.photos?.[0]||DEMO.find(p=>p.mode===mode)?.image||DEMO[0].image,address:x.formattedAddress||x.address||"",description:(x.description||"").trim()==="Property details supplied by the listing source."?"":(x.description||""),photos:x.photos||[],lat:x.latitude,lng:x.longitude};
+  return {...x,id:x.id||x.listingId||crypto.randomUUID(),listingId:x.listingId||x.id||"",propertyId:x.propertyId||"",mode,title:x.title||x.formattedAddress?.split(",")[0]||"EstateLux Property",city:x.city||"",state:x.state||"",price:x.price,beds:x.bedrooms??"—",baths:x.bathrooms??"—",sqft:x.squareFootage||0,type:x.propertyType||"Property",tag:x.listingType?.toUpperCase()||(mode==="rent"?"RENT":"FOR SALE"),image:x.photo||x.photos?.[0]||x.image||"",address:x.formattedAddress||x.address||"",description:(x.description||"").trim()==="Property details supplied by the listing source."?"":(x.description||""),photos:x.photos||[],lat:x.latitude??x.lat,lng:x.longitude??x.lng};
 }
 
 async function load(){
   await syncCloudFavorites();
   const savedFromStorage=[...savedProperties,...JSON.parse(localStorage.getItem("estatelux_saved_properties")||"[]")].find(x=>String(x?.id)===String(id));
   property=DEMO.find(x=>x.id===id&&x.mode===mode)||DEMO.find(x=>x.id===id)||savedFromStorage||null;
+  const detailPropertyId=requestedPropertyId||property?.propertyId||"";
+  if(detailPropertyId&&/^\\d+$/.test(detailPropertyId)){
+    try{
+      const qs=new URLSearchParams({propertyId:detailPropertyId,listingId:requestedListingId,mode});
+      const response=await fetch("/api/property-details?"+qs.toString(),{cache:"no-store"});
+      const data=await response.json().catch(()=>({}));
+      if(response.ok&&data.listing){
+        const detailed=normalize(data.listing);
+        property={...(property||{}),...detailed,photos:detailed.photos?.length?detailed.photos:(property?.photos||[]),image:detailed.image||property?.image||"",description:detailed.description||property?.description||""};
+      }
+    }catch(error){console.warn("EstateLux full property details unavailable:",error)}
+  }
   if(property) render();
   try{
-    const searchLocation=property?[property.city,property.state].filter(Boolean).join(", "):"";
+    const searchLocation=property?[property.city,property.state].filter(Boolean).join(", "):requestedLocation;
     const qs=new URLSearchParams({mode,limit:"50"});
     if(searchLocation)qs.set("location",searchLocation);
     const r=await fetch("/api/listings?"+qs.toString(),{cache:"no-store"});
@@ -63,10 +78,10 @@ async function load(){
 }
 
 function render(){
-  const gallery=[property.image,...(property.photos||[]).filter(x=>x&&x!==property.image)].slice(0,6);
+  const gallery=[...new Set([property.image,...(property.photos||[])].filter(x=>x&&!/floor[\\s_-]*plan|blueprint|site[\\s_-]*plan|plot[\\s_-]*plan/i.test(x)))].slice(0,12);
   const saved=JSON.parse(localStorage.getItem("estatelux_favorites")||"[]").includes(property.id);
   $("#propertyPage").innerHTML=`<section class="property-detail">
-    <div class="property-gallery">${gallery.map((img,i)=>`<img src="${esc(img)}" alt="${esc(property.title)} photo ${i+1}" loading="${i?"lazy":"eager"}">`).join("")}</div>
+    <div class="property-gallery">${gallery.length?`<img class="property-gallery-main" id="propertyGalleryMain" src="${esc(gallery[0])}" alt="${esc(property.title)} photo 1" loading="eager">`:'<div class="property-gallery-placeholder">Property photos are not available for this listing.</div>'}${gallery.length>1?`<div class="gallery-thumbnails" aria-label="More property photos">${gallery.map((img,i)=>`<button type="button" class="gallery-thumb ${i===0?"active":""}" data-gallery-image="${esc(img)}" aria-label="Show property photo ${i+1}"><img src="${esc(img)}" alt="" loading="lazy"></button>`).join("")}</div>`:""}</div>
     <div class="property-info">
       <span class="eyebrow dark">${esc(property.tag)}</span>
       <h1>${esc(property.title)}</h1>
@@ -79,6 +94,11 @@ function render(){
     </div>
   </section>`;
 
+  $("#propertyPage").querySelectorAll("[data-gallery-image]").forEach(button=>button.addEventListener("click",()=>{
+    const main=$("#propertyGalleryMain");
+    if(main)main.src=button.dataset.galleryImage;
+    $("#propertyPage").querySelectorAll(".gallery-thumb").forEach(item=>item.classList.toggle("active",item===button));
+  }));
   $("#contactProperty").addEventListener("click",openContact);
   $("#saveProperty").addEventListener("click",async ()=>{
     let saved=JSON.parse(localStorage.getItem("estatelux_favorites")||"[]");
