@@ -45,7 +45,7 @@ async function load(){
   const savedFromStorage=[...savedProperties,...JSON.parse(localStorage.getItem("estatelux_saved_properties")||"[]")].find(x=>String(x?.id)===String(id));
   property=DEMO.find(x=>x.id===id&&x.mode===mode)||DEMO.find(x=>x.id===id)||savedFromStorage||null;
   const detailPropertyId=requestedPropertyId||property?.propertyId||"";
-  if(detailPropertyId&&/^\d+$/.test(detailPropertyId)){
+  if(detailPropertyId&&/^\d+$/.test(detailPropertyId)&&(property?.photos?.length||0)<2){
     try{
       const qs=new URLSearchParams({propertyId:detailPropertyId,listingId:requestedListingId,mode});
       const response=await fetch("/api/property-details?"+qs.toString(),{cache:"no-store"});
