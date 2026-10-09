@@ -44,7 +44,7 @@ function normalizeListing(item, mode) {
     formattedAddress,
     latitude: address.coordinate?.lat ?? address.latitude ?? item.latitude ?? item.lat ?? null,
     longitude: address.coordinate?.lon ?? address.longitude ?? item.longitude ?? item.lng ?? null,
-    description: firstText(item.description, item.public_remarks, "Property details supplied by the listing source."),
+    description: firstText(item.description, item.public_remarks),
     href: firstText(item.href, item.url, item.listing_url),
     status: firstText(item.status),
     listDate: firstText(item.list_date, item.listDate),
@@ -86,14 +86,14 @@ export default async function handler(req, res) {
       "Manufactured": "Mobile",
       "Multi-Family": "Multi_Family"
     };
-    params.set("propertyType", aliases[propertyType] || propertyType.replace(/\\s+/g, "_"));
+    params.set("propertyType", aliases[propertyType] || propertyType.replace(/\s+/g, "_"));
   }
 
   const beds = String(q.bedrooms || "").trim();
-  if (beds && /^\\d+$/.test(beds)) params.set("bedsRange", "min:" + beds);
+  if (beds && /^\d+$/.test(beds)) params.set("bedsRange", "min:" + beds);
 
   const maxPrice = String(q.price || "").trim();
-  if (maxPrice && /^\\d+$/.test(maxPrice)) params.set("priceRange", "max:" + maxPrice);
+  if (maxPrice && /^\d+$/.test(maxPrice)) params.set("priceRange", "max:" + maxPrice);
 
   try {
     const response = await fetch(BASE + "?" + params.toString(), {
