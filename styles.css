@@ -150,3 +150,8 @@ body{perspective:1400px;overflow-x:hidden}
   *,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
   .reveal-3d{opacity:1;transform:none}
 }
+
+/* Accessible finishing pass: keyboard focus and reduced-motion safety. */
+:where(a,button,input,select,textarea,[role="button"],[tabindex]):focus-visible{outline:2px solid var(--gold2,#f0d477);outline-offset:3px}
+@media (hover:hover) and (prefers-reduced-motion:no-preference){.gold-btn,.outline-btn,.text-btn,.icon-btn,.search-btn{transition:transform .2s ease,box-shadow .2s ease,background-color .2s ease}.gold-btn:hover,.outline-btn:hover,.search-btn:hover{transform:translateY(-2px)}}
+@media (prefers-reduced-motion:reduce){html:focus-within{scroll-behavior:auto!important}*,*::before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
