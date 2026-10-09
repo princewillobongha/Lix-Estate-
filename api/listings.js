@@ -112,7 +112,7 @@ export default async function handler(req, res) {
 
     const raw = Array.isArray(data)
       ? data
-      : (data.results || data.listings || data.properties || data.data || data.hits || []);
+      : (data.searchResults || data.results || data.listings || data.properties || data.data || data.hits || []);
     const listings = Array.isArray(raw) ? raw.map(item => normalizeListing(item, mode)) : [];
 
     res.setHeader("Cache-Control", "s-maxage=180, stale-while-revalidate=300");
