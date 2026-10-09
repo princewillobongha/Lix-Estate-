@@ -10,6 +10,7 @@ const DEMO=[
 const params=new URLSearchParams(location.search);
 let mode=params.get("mode")==="rent"?"rent":"sale";
 let all=[];
+let remoteLocationSearch="";
 let favorites=JSON.parse(localStorage.getItem("estatelux_favorites")||"[]");
 let savedProperties=JSON.parse(localStorage.getItem("estatelux_saved_properties")||"[]");
 const SUPABASE_URL=window.ESTATELUX_SUPABASE_URL;
@@ -34,7 +35,7 @@ async function syncCloudFavorites(){
 }
 
 function normalize(p){
-  return {...p,id:p.id||crypto.randomUUID(),mode,title:p.title||p.formattedAddress?.split(",")[0]||"EstateLux Property",city:p.city||"",state:p.state||"",price:p.price,beds:p.bedrooms??"—",baths:p.bathrooms??"—",sqft:p.squareFootage||0,type:p.propertyType||"Property",tag:p.listingType?.toUpperCase()||(mode==="rent"?"RENT":"FOR SALE"),image:p.photo||p.photos?.[0]||DEMO.find(x=>x.mode===mode)?.image||DEMO[0].image,address:p.formattedAddress||p.address||"",description:p.description||"",lat:p.latitude,lng:p.longitude,photos:p.photos||[]};
+  return {...p,id:p.id||crypto.randomUUID(),mode,title:p.title||p.formattedAddress?.split(",")[0]||"EstateLux Property",city:p.city||"",state:p.state||"",price:p.price,beds:p.bedrooms??"—",baths:p.bathrooms??"—",sqft:p.squareFootage||0,type:p.propertyType||"Property",tag:p.listingType?.toUpperCase()||(mode==="rent"?"RENT":"FOR SALE"),image:p.photo||p.photos?.[0]||DEMO.find(x=>x.mode===mode)?.image||DEMO[0].image,address:p.formattedAddress||p.address||"",description:(p.description||"").trim()==="Property details supplied by the listing source."?"":(p.description||""),lat:p.latitude,lng:p.longitude,photos:p.photos||[]};
 }
 
 function render(items){
@@ -67,6 +68,7 @@ async function fetchLive(){
   const beds=$("#pBeds")?.value||"";
   const budget=$("#pBudget")?.value||"";
   if(loc)qs.set("location",loc);
+  remoteLocationSearch=loc;
   if(type)qs.set("propertyType",type);
   if(beds)qs.set("bedrooms",beds);
   if(budget)qs.set("price",budget);
@@ -74,7 +76,8 @@ async function fetchLive(){
     const r=await fetch("/api/listings?"+qs.toString(),{cache:"no-store"});
     const d=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error("Live listings unavailable");
-    all=Array.isArray(d.listings)&&d.listings.length?d.listings.map(normalize):DEMO.filter(x=>x.mode===mode);
+    all=Array.isArray(d.listings)?d.listings.map(normalize):[];
+    if(!loc && !all.length) all=DEMO.filter(x=>x.mode===mode);
   }catch(e){
     console.warn("EstateLux search failed:",e);
     all=$( "#pLocation")?.value.trim()?[]:DEMO.filter(x=>x.mode===mode);
@@ -89,7 +92,7 @@ function filterLocal(){
   const budget=$("#pBudget")?.value||"";
   const items=all.filter(p=>{
     const hay=norm([p.title,p.city,p.state,p.address,p.formattedAddress,p.zip,p.postalCode].join(" "));
-    const locationMatch=!q||q.split(" ").filter(Boolean).every(x=>hay.includes(x))||hay.replace(/[^a-z0-9]/g,"").includes(q.replace(/[^a-z0-9]/g,""));
+    const locationMatch=!q||Boolean(remoteLocationSearch&&norm(remoteLocationSearch)===q)||q.split(" ").filter(Boolean).every(x=>hay.includes(x))||hay.replace(/[^a-z0-9]/g,"").includes(q.replace(/[^a-z0-9]/g,""));
     const typeAliases={"single family":["single family","single-family","house"],"townhouse":["townhouse","townhome"],"apartment":["apartment","condo"]};
     const normalizedType=norm(p.type).replace(/_/g," ").replace(/-/g," ");
     const typeMatch=!type||normalizedType===norm(type).replace(/_/g," ").replace(/-/g," ")||(typeAliases[norm(type)]||[]).some(alias=>normalizedType.includes(alias.replace(/-/g," ")));
