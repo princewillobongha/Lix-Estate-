@@ -78,7 +78,7 @@ function normalizeApi(p){
     lat:p.latitude,
     lng:p.longitude,
     address:p.formattedAddress||p.address||"",
-    description:p.description||"Property details supplied through the EstateLux listing feed.",
+    description:p.description||"",
     photos:p.photos||[]
   };
 }
@@ -264,7 +264,7 @@ function openModal(type,data=null){
     html=`<span class="eyebrow dark">PROFILE</span><h2>Your EstateLux profile</h2><form class="modal-form" id="profileForm"><div class="profile-upload"><div class="avatar large" id="profilePreview">${p.avatar_url?`<img src="${esc(p.avatar_url)}" alt="Profile picture">`:"👤"}</div><label class="outline-btn file-btn">Add profile picture<input type="file" id="profilePicture" name="profile_picture" accept="image/*" hidden></label></div><input name="full_name" value="${esc(p.full_name||currentUser.user_metadata?.full_name||"")}" placeholder="Full name"><input name="username" value="${esc(p.username||"")}" placeholder="Username"><input name="phone" value="${esc(p.phone||"")}" placeholder="Phone number"><input name="country" value="${esc(p.country||"")}" placeholder="Country"><button class="gold-btn">Save profile</button><p id="profileMessage"></p></form>`;
   }else if(type==="saved"){
     const saved=savedProperties.filter(p=>favorites.includes(p.id));
-    html=`<span class="eyebrow dark">YOUR COLLECTION</span><h2>Saved properties</h2>${saved.length?'<div class="saved-list">'+saved.map(p=>`<div class="saved-row"><span>${esc(p.title)}<small> · ${esc(p.city)}, ${esc(p.state)}</small></span><button data-property="${esc(p.id)}">Open →</button></div>`).join("")+"</div>":'<p>No saved properties yet. Tap ♡ on a property to build your collection.</p>'}`;
+    html=`<span class="eyebrow dark">YOUR COLLECTION</span><h2>Saved properties</h2>${saved.length?'<div class="saved-list">'+saved.map(p=>`<div class="saved-row"><span>${esc(p.title||"EstateLux Property")}<small> · ${esc(p.city)}, ${esc(p.state)}</small></span><a class="saved-open" href="property.html?id=${encodeURIComponent(p.id)}&mode=${encodeURIComponent(p.mode||"sale")}&saved=1">Open →</a></div>`).join("")+"</div>":'<p>No saved properties yet. Tap ♡ on a property to build your collection.</p>'}`;
   }else if(type==="alerts"){
     if(!currentUser){openModal("login");return}
     html=`<span class="eyebrow dark">PROPERTY ALERTS</span><h2>Stay ahead of new listings.</h2><form class="modal-form" id="alertForm"><input required type="email" name="email" value="${esc(currentUser.email||"")}" placeholder="Email address"><input required name="search" placeholder="e.g. 3+ bedrooms in Houston"><select name="frequency"><option value="daily">Daily digest</option><option value="instant">New listing alerts</option><option value="weekly">Weekly</option></select><button class="gold-btn">Save alert</button><p id="alertMessage"></p></form>`;
