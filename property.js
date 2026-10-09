@@ -131,9 +131,19 @@ document.addEventListener("submit",async e=>{
     if(client){
       const {data:userData}=await client.auth.getUser();
       payload.user_id=userData?.user?.id||null;
-      const {data:inquiryRow,error}=await client.from("inquiries").insert(payload).select("id").single();
-      if(error)throw error;
-      payload.inquiry_id=inquiryRow?.id||"";
+      // Insert without SELECT: the public inquiry policy allows submission,
+      // but SELECT is restricted to a user's own inquiries and can make
+      // insert(...).select(...).single() fail even when the insert is allowed.
+      let {error:inquiryError}=await client.from("inquiries").insert(payload);
+      // If a stale/mismatched browser session makes the optional user link fail,
+      // retry as a public inquiry so the visitor can still send the request.
+      if(inquiryError && payload.user_id){
+        const retryPayload={...payload,user_id:null};
+        const retry=await client.from("inquiries").insert(retryPayload);
+        inquiryError=retry.error;
+        if(!inquiryError)payload.user_id=null;
+      }
+      if(inquiryError)throw inquiryError;
       if(payload.user_id){
         await client.from("notifications").insert({
           user_id:payload.user_id,
