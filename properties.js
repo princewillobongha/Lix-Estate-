@@ -76,7 +76,8 @@ async function fetchLive(){
     if(!r.ok)throw new Error("Live listings unavailable");
     all=Array.isArray(d.listings)&&d.listings.length?d.listings.map(normalize):DEMO.filter(x=>x.mode===mode);
   }catch(e){
-    all=DEMO.filter(x=>x.mode===mode);
+    console.warn("EstateLux search failed:",e);
+    all=$( "#pLocation")?.value.trim()?[]:DEMO.filter(x=>x.mode===mode);
   }
   filterLocal();
 }
@@ -90,7 +91,8 @@ function filterLocal(){
     const hay=norm([p.title,p.city,p.state,p.address,p.formattedAddress,p.zip,p.postalCode].join(" "));
     const locationMatch=!q||q.split(" ").filter(Boolean).every(x=>hay.includes(x))||hay.replace(/[^a-z0-9]/g,"").includes(q.replace(/[^a-z0-9]/g,""));
     const typeAliases={"single family":["single family","single-family","house"],"townhouse":["townhouse","townhome"],"apartment":["apartment","condo"]};
-    const typeMatch=!type||norm(p.type)===norm(type)||(typeAliases[norm(type)]||[]).some(alias=>norm(p.type).includes(alias));
+    const normalizedType=norm(p.type).replace(/_/g," ").replace(/-/g," ");
+    const typeMatch=!type||normalizedType===norm(type).replace(/_/g," ").replace(/-/g," ")||(typeAliases[norm(type)]||[]).some(alias=>normalizedType.includes(alias.replace(/-/g," ")));
     return locationMatch&&typeMatch&&(!beds||!Number.isFinite(Number(p.beds))||Number(p.beds)>=Number(beds))&&(!budget||!Number(p.price)||Number(p.price)<=Number(budget));
   });
   render(items);
