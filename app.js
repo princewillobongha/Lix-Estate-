@@ -20,7 +20,6 @@ let savedProperties=JSON.parse(localStorage.getItem("estatelux_saved_properties"
 let currentUser=null;
 let currentProfile=null;
 let notificationChannel=null;
-let listingNotice="";
 
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
@@ -40,8 +39,8 @@ function matchesLocation(p,q){
 function renderListings(items=filtered){
   const grid=$("#listingGrid"),empty=$("#emptyState");
   if(!grid)return;
-  if(!items.length){grid.innerHTML="";empty?.classList.remove("hidden");const message=empty?.querySelector("p");if(message&&listingNotice)message.textContent=listingNotice;return}
-  empty?.classList.add("hidden");const message=empty?.querySelector("p");if(message)message.textContent="Try a broader location or remove a filter.";
+  if(!items.length){grid.innerHTML="";empty?.classList.remove("hidden");return}
+  empty?.classList.add("hidden");
   grid.innerHTML=items.map(p=>`
     <article class="listing-card">
       <div class="listing-image" style="background-image:url('${esc(p.image)}')">
@@ -65,8 +64,6 @@ function normalizeApi(p){
   return {
     ...p,
     id:p.id||crypto.randomUUID(),
-    listingId:p.listingId||p.id||"",
-    propertyId:p.propertyId||"",
     mode,
     title:p.title||p.formattedAddress?.split(",")[0]||"EstateLux Property",
     city:p.city||"",
@@ -77,7 +74,7 @@ function normalizeApi(p){
     sqft:p.squareFootage||0,
     type:p.propertyType||"Property",
     tag:p.listingType?.toUpperCase()||(mode==="rent"?"RENT":"FOR SALE"),
-    image:p.photo||p.photos?.[0]||"",
+    image:p.photo||p.photos?.[0]||DEMO_LISTINGS.find(x=>x.mode===mode)?.image||DEMO_LISTINGS[0].image,
     lat:p.latitude,
     lng:p.longitude,
     address:p.formattedAddress||p.address||"",
@@ -94,8 +91,8 @@ function localFilter(){
   filtered=listings.filter(p=>{
     if(p.mode!==mode)return false;
     if(!matchesLocation(p,q))return false;
-    if(type){const selected=normalized(type).replace(/[_-]/g," ");const actual=normalized(p.type).replace(/[_-]/g," ");const aliases={"single family":["single family","house"],"townhouse":["townhouse","townhome"],"apartment":["apartment","condo"],"multi family":["multi family"],"manufactured":["manufactured","mobile"]};if(actual!==selected&&!(aliases[selected]||[]).some(alias=>actual.includes(alias)))return false;}
-    if(beds&&(!Number.isFinite(Number(p.beds))||Number(p.beds)<Number(beds.replace("+",""))))return false;
+    if(type&&normalized(p.type)!==normalized(type))return false;
+    if(beds&&Number(p.beds)<Number(beds.replace("+","")))return false;
     if(max&&Number(p.price)>Number(max))return false;
     return true;
   });
@@ -103,13 +100,9 @@ function localFilter(){
 }
 
 async function loadApi(){
-  const loc=$("#locationInput")?.value.trim()||"";
-  listingNotice="Loading live properties…";
-  listings=[];
-  filtered=[];
-  renderListings([]);
   try{
     const qs=new URLSearchParams({mode,limit:"24"});
+    const loc=$("#locationInput")?.value.trim();
     const type=$("#typeInput")?.value;
     const beds=$("#bedsInput")?.value;
     const max=$("#budgetInput")?.value;
@@ -120,21 +113,19 @@ async function loadApi(){
     const r=await fetch("/api/listings?"+qs.toString(),{cache:"no-store"});
     const data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error?.message||data.error||"Live listing feed unavailable");
-    listings=Array.isArray(data.listings)?data.listings.map(normalizeApi):[];
-    if(!listings.length&&loc){
-      listingNotice="No matching homes were found in "+loc+". Try a nearby city, a ZIP code, or remove a filter.";
-    }else if(!listings.length){
+    if(Array.isArray(data.listings)&&data.listings.length){
+      listings=data.listings.map(normalizeApi);
+    }else{
       listings=DEMO_LISTINGS.filter(x=>x.mode===mode);
-      listingNotice="";
-    }else listingNotice="";
+    }
     localFilter();
   }catch(e){
     console.warn("EstateLux live listings unavailable:",e);
-    if(loc){listings=[];listingNotice="Live property search is temporarily unavailable. Please try again shortly.";}
-    else{listings=DEMO_LISTINGS.filter(x=>x.mode===mode);listingNotice="";}
+    listings=DEMO_LISTINGS.filter(x=>x.mode===mode);
     localFilter();
   }
 }
+
 function setMode(next){
   mode=next==="rent"?"rent":"sale";
   $$(".search-tabs button").forEach(b=>b.classList.toggle("active",b.dataset.mode===mode));
@@ -142,10 +133,8 @@ function setMode(next){
   if($("#budgetInput"))$("#budgetInput").innerHTML=mode==="rent"
     ?'<option value="">Any</option><option value="1500">$1.5k</option><option value="2500">$2.5k</option><option value="4000">$4k</option><option value="6000">$6k</option><option value="10000">$10k</option>'
     :'<option value="">Any</option><option value="300000">$300k</option><option value="500000">$500k</option><option value="750000">$750k</option><option value="1000000">$1M</option><option value="2000000">$2M</option>';
-  listingNotice="Loading live properties…";
-  listings=[];
-  filtered=[];
-  renderListings([]);
+  listings=DEMO_LISTINGS.filter(x=>x.mode===mode);
+  localFilter();
   loadApi();
 }
 
@@ -327,7 +316,7 @@ document.addEventListener("click",async e=>{
   if(fav){e.preventDefault();await saveFavorite(fav.dataset.fav);return}
 
   const prop=e.target.closest("[data-property]");
-  if(prop){e.preventDefault();const p=listings.find(x=>String(x.id)===String(prop.dataset.property))||savedProperties.find(x=>String(x.id)===String(prop.dataset.property));if(p){savedProperties=[...savedProperties.filter(x=>String(x.id)!==String(p.id)),p];localStorage.setItem("estatelux_saved_properties",JSON.stringify(savedProperties));const url=new URL("property.html",location.href);url.searchParams.set("id",p.id);url.searchParams.set("mode",p.mode||mode);if(p.propertyId)url.searchParams.set("propertyId",p.propertyId);if(p.listingId)url.searchParams.set("listingId",p.listingId);url.searchParams.set("location",[p.city,p.state].filter(Boolean).join(", "));location.href=url.href;}else location.href="property.html?id="+encodeURIComponent(prop.dataset.property)+"&mode="+encodeURIComponent(mode);return}
+  if(prop){e.preventDefault();const p=listings.find(x=>x.id===prop.dataset.property)||savedProperties.find(x=>x.id===prop.dataset.property);if(p)openModal("property",p);else location.href="property.html?id="+encodeURIComponent(prop.dataset.property)+"&mode="+encodeURIComponent(mode);return}
 
   const map=e.target.closest("[data-map]");
   if(map){e.preventDefault();const p=listings.find(x=>x.id===map.dataset.map);if(p)openMapForProperty(p);return}
@@ -339,7 +328,7 @@ document.addEventListener("click",async e=>{
   if(contact){e.preventDefault();const p=listings.find(x=>x.id===contact.dataset.openContact);if(p)openModal("contact",p);return}
 
   const quick=e.target.closest("[data-quick]");
-  if(quick){e.preventDefault();if($("#locationInput"))$("#locationInput").value=quick.dataset.quick;$("#featured")?.scrollIntoView({behavior:"smooth"});loadApi();return}
+  if(quick){e.preventDefault();if($("#locationInput"))$("#locationInput").value=quick.dataset.quick;$("#featured")?.scrollIntoView({behavior:"smooth"});localFilter();loadApi();return}
 
   if(e.target.closest("#viewAllBtn")){e.preventDefault();location.href="properties.html?mode="+mode;return}
   if(e.target.closest("#rentBtn")){e.preventDefault();location.href="properties.html?mode=rent";return}
@@ -408,6 +397,7 @@ document.addEventListener("click",async e=>{
 document.addEventListener("submit",async e=>{
   if(e.target.id==="searchForm"){
     e.preventDefault();
+    localFilter();
     $("#featured")?.scrollIntoView({behavior:"smooth"});
     await loadApi();
     return;
