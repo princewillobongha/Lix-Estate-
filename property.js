@@ -34,7 +34,7 @@ async function syncCloudFavorites(){
 }
 
 function normalize(x){
-  return {...x,id:x.id||crypto.randomUUID(),mode,title:x.title||x.formattedAddress?.split(",")[0]||"EstateLux Property",city:x.city||"",state:x.state||"",price:x.price,beds:x.bedrooms??"—",baths:x.bathrooms??"—",sqft:x.squareFootage||0,type:x.propertyType||"Property",tag:x.listingType?.toUpperCase()||(mode==="rent"?"RENT":"FOR SALE"),image:x.photo||x.photos?.[0]||DEMO.find(p=>p.mode===mode)?.image||DEMO[0].image,address:x.formattedAddress||x.address||"",description:x.description||"",photos:x.photos||[],lat:x.latitude,lng:x.longitude};
+  return {...x,id:x.id||crypto.randomUUID(),mode,title:x.title||x.formattedAddress?.split(",")[0]||"EstateLux Property",city:x.city||"",state:x.state||"",price:x.price,beds:x.bedrooms??"—",baths:x.bathrooms??"—",sqft:x.squareFootage||0,type:x.propertyType||"Property",tag:x.listingType?.toUpperCase()||(mode==="rent"?"RENT":"FOR SALE"),image:x.photo||x.photos?.[0]||DEMO.find(p=>p.mode===mode)?.image||DEMO[0].image,address:x.formattedAddress||x.address||"",description:(x.description||"").trim()==="Property details supplied by the listing source."?"":(x.description||""),photos:x.photos||[],lat:x.latitude,lng:x.longitude};
 }
 
 async function load(){
@@ -50,7 +50,7 @@ async function load(){
     const d=await r.json().catch(()=>({}));
     const live=(d.listings||[]).map(normalize);
     const matched=live.find(x=>String(x.id)===String(id));
-    if(matched){property={...(property||{}),...matched,description:matched.description||property?.description||""};render();}
+    if(matched){property={...(property||{}),...matched,description:((matched.description||"").trim()==="Property details supplied by the listing source."?"":matched.description)||property?.description||""};render();}
   }catch(e){}
   if(!property){
     $("#propertyPage").innerHTML="<div class='section'><h1>Property details</h1><p>This listing is no longer available in the current live feed. You can still browse similar properties in the same area.</p><a class='gold-btn' href='properties.html?mode="+mode+"'>Browse properties</a></div>";
