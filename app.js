@@ -316,7 +316,7 @@ document.addEventListener("click",async e=>{
   if(fav){e.preventDefault();await saveFavorite(fav.dataset.fav);return}
 
   const prop=e.target.closest("[data-property]");
-  if(prop){e.preventDefault();const p=listings.find(x=>x.id===prop.dataset.property);if(p)openModal("property",p);return}
+  if(prop){e.preventDefault();const p=listings.find(x=>x.id===prop.dataset.property)||savedProperties.find(x=>x.id===prop.dataset.property);if(p)openModal("property",p);else location.href="property.html?id="+encodeURIComponent(prop.dataset.property)+"&mode="+encodeURIComponent(mode);return}
 
   const map=e.target.closest("[data-map]");
   if(map){e.preventDefault();const p=listings.find(x=>x.id===map.dataset.map);if(p)openMapForProperty(p);return}
