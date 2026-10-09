@@ -34,20 +34,26 @@ async function syncCloudFavorites(){
 }
 
 function normalize(x){
-  return {...x,id:x.id||crypto.randomUUID(),mode,title:x.title||x.formattedAddress?.split(",")[0]||"EstateLux Property",city:x.city||"",state:x.state||"",price:x.price,beds:x.bedrooms??"—",baths:x.bathrooms??"—",sqft:x.squareFootage||0,type:x.propertyType||"Property",tag:x.listingType?.toUpperCase()||(mode==="rent"?"RENT":"FOR SALE"),image:x.photo||x.photos?.[0]||DEMO.find(p=>p.mode===mode)?.image||DEMO[0].image,address:x.formattedAddress||x.address||"",description:x.description||"Property details supplied through the EstateLux listing feed.",photos:x.photos||[],lat:x.latitude,lng:x.longitude};
+  return {...x,id:x.id||crypto.randomUUID(),mode,title:x.title||x.formattedAddress?.split(",")[0]||"EstateLux Property",city:x.city||"",state:x.state||"",price:x.price,beds:x.bedrooms??"—",baths:x.bathrooms??"—",sqft:x.squareFootage||0,type:x.propertyType||"Property",tag:x.listingType?.toUpperCase()||(mode==="rent"?"RENT":"FOR SALE"),image:x.photo||x.photos?.[0]||DEMO.find(p=>p.mode===mode)?.image||DEMO[0].image,address:x.formattedAddress||x.address||"",description:x.description||"",photos:x.photos||[],lat:x.latitude,lng:x.longitude};
 }
 
 async function load(){
   await syncCloudFavorites();
-  property=DEMO.find(x=>x.id===id&&x.mode===mode)||DEMO.find(x=>x.id===id)||null;
+  const savedFromStorage=[...savedProperties,...JSON.parse(localStorage.getItem("estatelux_saved_properties")||"[]")].find(x=>String(x?.id)===String(id));
+  property=DEMO.find(x=>x.id===id&&x.mode===mode)||DEMO.find(x=>x.id===id)||savedFromStorage||null;
+  if(property) render();
   try{
-    const r=await fetch("/api/listings?mode="+mode+"&limit=100",{cache:"no-store"});
+    const searchLocation=property?[property.city,property.state].filter(Boolean).join(", "):"";
+    const qs=new URLSearchParams({mode,limit:"50"});
+    if(searchLocation)qs.set("location",searchLocation);
+    const r=await fetch("/api/listings?"+qs.toString(),{cache:"no-store"});
     const d=await r.json().catch(()=>({}));
     const live=(d.listings||[]).map(normalize);
-    property=live.find(x=>x.id===id)||property;
+    const matched=live.find(x=>String(x.id)===String(id));
+    if(matched){property={...(property||{}),...matched,description:matched.description||property?.description||""};render();}
   }catch(e){}
   if(!property){
-    $("#propertyPage").innerHTML="<div class='section'><h1>Property not found</h1><p>This property may no longer be in the live listing feed.</p><a class='gold-btn' href='properties.html?mode="+mode+"'>Browse properties</a></div>";
+    $("#propertyPage").innerHTML="<div class='section'><h1>Property details</h1><p>This listing is no longer available in the current live feed. You can still browse similar properties in the same area.</p><a class='gold-btn' href='properties.html?mode="+mode+"'>Browse properties</a></div>";
     return;
   }
   document.title=property.title+" — EstateLux";
@@ -67,7 +73,7 @@ function render(){
       <div class="property-price">$ ${Number(property.price||0).toLocaleString()}${mode==="rent"?"/mo":""}</div>
       <div class="property-stats"><b>${esc(property.beds)}<small>Bedrooms</small></b><b>${esc(property.baths)}<small>Bathrooms</small></b><b>${Number(property.sqft||0).toLocaleString()}<small>Sq ft</small></b></div>
       <p class="property-address">${esc(property.address||property.city+", "+property.state)}</p>
-      <p>${esc(property.description)}</p>
+      ${property.description?`<p>${esc(property.description)}</p>`:""}
       <div class="property-actions"><button class="gold-btn" id="contactProperty">Request information</button><button class="outline-btn" id="saveProperty">${saved?"♥ Saved":"♡ Save property"}</button><button class="outline-btn" id="propertyMap">Open map</button></div>
       <div class="property-facts"><h3>Property overview</h3><p>Property type: <b>${esc(property.type)}</b></p><p>Location: <b>${esc(property.city)}, ${esc(property.state)}</b></p><p>Listing status: <b>Available through EstateLux search</b></p></div>
     </div>
